@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>James 3 - Snakes & Ladders Board Game</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+button{cursor:pointer;font-family:inherit;}
+
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;width:100%;}
+.screen.active{display:flex;}
+
+/* === SETUP === */
+#setup{gap:14px;text-align:center;max-width:500px;}
+#setup h1{font-size:2.4em;background:linear-gradient(135deg,#f6d365,#fda085);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#setup .subtitle{color:#aaa;font-style:italic;margin-bottom:6px;font-size:0.95em;}
+.setup-section{background:rgba(255,255,255,0.04);border-radius:16px;padding:18px;width:100%;text-align:left;}
+.setup-section h3{margin-bottom:10px;font-size:1.1em;color:#f6d365;}
+.setup-row{display:flex;gap:8px;margin-bottom:8px;}
+.setup-row input{flex:1;padding:12px;border-radius:10px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:1em;}
+.setup-row input:focus{outline:none;border-color:#f6d365;}
+.age-opts{display:flex;gap:8px;margin-bottom:10px;}
+.age-opt{padding:8px 16px;border-radius:10px;border:2px solid rgba(255,255,255,0.15);background:transparent;color:#fff;font-size:0.9em;transition:all .15s;}
+.age-opt:hover,.age-opt.sel{background:linear-gradient(135deg,#f6d365,#fda085);border-color:transparent;color:#1a1a2e;font-weight:bold;}
+.add-btn{padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-weight:bold;font-size:0.95em;}
+.add-btn:hover{transform:scale(1.04);}
+.player-list{margin-top:8px;max-height:200px;overflow-y:auto;}
+.player-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;margin:4px;border-radius:20px;font-weight:600;font-size:0.95em;}
+.player-chip .del{background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.1em;padding:0 4px;}
+.player-chip .del:hover{color:#fff;}
+.play-btn{padding:16px 48px;font-size:1.3em;border:none;border-radius:16px;color:#fff;font-weight:bold;background:linear-gradient(135deg,#f6d365,#fda085);transition:transform .15s;}
+.play-btn:hover{transform:scale(1.06);}
+.play-btn:disabled{opacity:0.4;transform:none;cursor:default;}
+
+/* === GAME === */
+#game{padding:10px;gap:0;justify-content:flex-start;min-height:auto;}
+.game-top{display:flex;width:100%;max-width:1200px;gap:16px;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
+.board-area{position:relative;overflow:auto;}
+.board-canvas{border-radius:14px;display:block;}
+.side-panel{min-width:240px;max-width:300px;flex:1;}
+.panel-box{background:rgba(255,255,255,0.04);border-radius:14px;padding:14px;margin-bottom:12px;}
+.panel-box h3{font-size:1em;color:#f6d365;margin-bottom:8px;}
+.turn-indicator{font-size:1.3em;font-weight:bold;margin-bottom:10px;text-align:center;}
+.dice-area{text-align:center;margin:10px 0;}
+.dice-btn{padding:16px 40px;font-size:1.3em;border:none;border-radius:14px;color:#fff;font-weight:bold;background:linear-gradient(135deg,#667eea,#764ba2);transition:transform .15s;}
+.dice-btn:hover{transform:scale(1.06);}
+.dice-btn:disabled{opacity:0.3;transform:none;cursor:default;}
+.dice-result{font-size:3em;margin:10px 0;min-height:70px;display:flex;align-items:center;justify-content:center;}
+.player-scores{list-style:none;}
+.player-scores li{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:1em;}
+.player-scores li:last-child{border:none;}
+.p-dot{width:18px;height:18px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.p-pos{color:#aaa;margin-left:auto;font-size:0.85em;}
+.p-active{font-weight:bold;}
+
+/* Legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:0.8em;color:#aaa;padding:6px 0;}
+.legend span{display:flex;align-items:center;gap:4px;}
+.leg-box{width:14px;height:14px;border-radius:3px;display:inline-block;}
+
+/* Event popup */
+.event-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:50;align-items:center;justify-content:center;padding:20px;}
+.event-overlay.active{display:flex;}
+.event-card{background:#16213e;border-radius:20px;padding:28px;width:480px;max-width:95vw;text-align:center;animation:popIn .3s ease;max-height:90vh;overflow-y:auto;}
+.event-card h3{font-size:1.4em;margin-bottom:12px;}
+.event-card .event-text{font-size:1.1em;line-height:1.5;margin-bottom:14px;}
+.event-card .event-move{font-size:1em;margin-bottom:12px;padding:10px;border-radius:10px;}
+.event-move.ladder{background:rgba(46,204,113,0.15);color:#2ecc71;}
+.event-move.snake{background:rgba(231,76,60,0.15);color:#e74c3c;}
+.event-move.question{background:rgba(241,196,15,0.12);color:#f1c40f;}
+.event-card .event-verse{font-style:italic;color:#888;font-size:0.85em;margin-bottom:14px;}
+.event-ok{padding:12px 36px;border:none;border-radius:12px;background:linear-gradient(135deg,#f6d365,#fda085);color:#1a1a2e;font-weight:bold;font-size:1.1em;}
+.event-ok:hover{transform:scale(1.04);}
+
+.q-options{display:flex;flex-direction:column;gap:8px;margin:14px 0;}
+.q-opt{padding:12px 18px;border-radius:12px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:1em;text-align:left;transition:all .15s;}
+.q-opt:hover{border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.1);}
+.q-opt.correct{background:rgba(46,204,113,0.25);border-color:#2ecc71;}
+.q-opt.wrong{background:rgba(231,76,60,0.25);border-color:#e74c3c;}
+.q-feedback{font-size:1.1em;margin:8px 0;min-height:30px;}
+
+.win-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:60;align-items:center;justify-content:center;}
+.win-overlay.active{display:flex;}
+.win-card{background:#16213e;border-radius:24px;padding:36px;text-align:center;animation:popIn .4s ease;max-width:90vw;}
+.win-card h2{font-size:2.2em;background:linear-gradient(135deg,#f6d365,#fda085);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.win-card .winner-name{font-size:1.6em;margin:10px 0;}
+.win-card .win-verse{font-style:italic;color:#aaa;margin:14px 0;font-size:0.95em;}
+
+.back-btn{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:8px 18px;border-radius:10px;font-size:0.9em;margin-bottom:8px;align-self:flex-start;}
+.back-btn:hover{background:rgba(255,255,255,0.2);}
+
+@keyframes popIn{from{transform:scale(0.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+@media(max-width:800px){
+  .game-top{flex-direction:column;align-items:center;}
+  .side-panel{max-width:100%;min-width:auto;width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- ======== SETUP ======== -->
+<div class="screen active" id="setup">
+  <h1>Snakes &amp; Ladders</h1>
+  <div class="subtitle">"The tongue has the power of life and death." — James 3</div>
+  <div class="setup-section">
+    <h3>Add Players (2-6)</h3>
+    <div class="setup-row">
+      <input type="text" id="pname" placeholder="Name..." maxlength="16" autocomplete="off">
+    </div>
+    <div class="age-opts" id="age-opts">
+      <button class="age-opt" data-age="5-7" onclick="selAge(this)">5-7</button>
+      <button class="age-opt sel" data-age="8-10" onclick="selAge(this)">8-10</button>
+      <button class="age-opt" data-age="11-13" onclick="selAge(this)">11-13</button>
+    </div>
+    <button class="add-btn" onclick="addP()">+ Add Player</button>
+    <div class="player-list" id="plist"></div>
+  </div>
+  <button class="play-btn" id="start-btn" onclick="startGame()" disabled>Start Game</button>
+</div>
+
+<!-- ======== GAME ======== -->
+<div class="screen" id="game">
+  <button class="back-btn" onclick="backToSetup()">← New Game</button>
+  <div class="game-top">
+    <div class="board-area">
+      <canvas id="board" class="board-canvas"></canvas>
+      <div class="legend">
+        <span><span class="leg-box" style="background:rgba(46,204,113,0.35);"></span> Ladder (kind words)</span>
+        <span><span class="leg-box" style="background:rgba(231,76,60,0.35);"></span> Snake (hurtful words)</span>
+        <span><span class="leg-box" style="background:rgba(241,196,15,0.35);"></span> Bible Question</span>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="turn-indicator" id="turn-ind"></div>
+      <div class="dice-area">
+        <button class="dice-btn" id="dice-btn" onclick="rollDice()">🎲 Roll Dice</button>
+        <div class="dice-result" id="dice-result"></div>
+      </div>
+      <div class="panel-box">
+        <h3>Players</h3>
+        <ul class="player-scores" id="player-list"></ul>
+      </div>
+      <div class="panel-box">
+        <h3>Game Log</h3>
+        <div id="game-log" style="max-height:180px;overflow-y:auto;font-size:0.85em;color:#aaa;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== EVENT POPUP ======== -->
+<div class="event-overlay" id="event-overlay">
+  <div class="event-card" id="event-card">
+    <h3 id="event-title"></h3>
+    <div class="event-text" id="event-text"></div>
+    <div class="event-move" id="event-move"></div>
+    <div class="event-verse" id="event-verse"></div>
+    <div class="q-options" id="q-options" style="display:none;"></div>
+    <div class="q-feedback" id="q-feedback"></div>
+    <button class="event-ok" id="event-ok" onclick="closeEvent()">OK</button>
+  </div>
+</div>
+
+<!-- ======== WIN ======== -->
+<div class="win-overlay" id="win-overlay">
+  <div class="win-card">
+    <h2>🏆 Winner!</h2>
+    <div class="winner-name" id="winner-name"></div>
+    <div class="win-verse">"Peacemakers who sow in peace reap a harvest of righteousness." — James 3:18</div>
+    <button class="play-btn" onclick="backToSetup()" style="margin-top:16px;">Play Again</button>
+  </div>
+</div>
+
+<script>
+// =============================================
+//  CONSTANTS
+// =============================================
+const COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
+const CNAMES = ['Red','Blue','Green','Orange','Purple','Teal'];
+const BOARD_SIZE = 80;
+const COLS = 10;
+const ROWS = 8;
+const ANIM_SPEED = 250; // ms per square (slower = more visible)
+
+// =============================================
+//  SETUP
+// =============================================
+const players = [];
+let setupAge = '8-10';
+
+function selAge(btn) {
+  document.querySelectorAll('#age-opts .age-opt').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  setupAge = btn.dataset.age;
+}
+function addP() {
+  const inp = document.getElementById('pname');
+  const name = inp.value.trim();
+  if (!name || players.length >= 6) return;
+  if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+    inp.value = ''; inp.placeholder = 'Already added!';
+    setTimeout(() => inp.placeholder = 'Name...', 1200); return;
+  }
+  players.push({ name, age: setupAge, pos: 0, color: COLORS[players.length], cname: CNAMES[players.length] });
+  inp.value = ''; inp.focus(); renderSetup();
+}
+function delP(i) { players.splice(i, 1); players.forEach((p, j) => { p.color = COLORS[j]; p.cname = CNAMES[j]; }); renderSetup(); }
+function renderSetup() {
+  document.getElementById('plist').innerHTML = players.map((p, i) =>
+    `<span class="player-chip" style="background:${p.color}"><span>${esc(p.name)}</span><span style="font-size:0.75em;opacity:0.7;">(${p.age})</span><button class="del" onclick="delP(${i})">&times;</button></span>`
+  ).join('');
+  document.getElementById('start-btn').disabled = players.length < 2;
+}
+document.getElementById('pname').addEventListener('keydown', e => { if (e.key === 'Enter') addP(); });
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// =============================================
+//  BOARD DATA  (80 squares, 10×8)
+// =============================================
+
+// 8 LADDERS — kind/wise speech lifts you up
+// On a ladder: you get a question. Correct = climb. Wrong = stay put.
+const LADDERS = {
+  3:  { to: 22, age: { '5-7': { text: "You said 'Thank you!' to your teacher.", verse: "James 3:17" }, '8-10': { text: "You encouraged a friend who was feeling down.", verse: "James 3:17" }, '11-13': { text: "You used your influence to include someone being left out.", verse: "James 3:17 — The wisdom from heaven is peace-loving and considerate." } }},
+  11: { to: 29, age: { '5-7': { text: "You shared your snack and said kind words.", verse: "James 3:13" }, '8-10': { text: "You admitted you were wrong and apologised sincerely.", verse: "James 3:13" }, '11-13': { text: "When gossip started spreading, you refused to pass it on and changed the subject.", verse: "James 3:13 — Show wisdom by your good life." } }},
+  18: { to: 37, age: { '5-7': { text: "You helped a younger child who was upset.", verse: "James 3:17" }, '8-10': { text: "You stood up for someone being teased.", verse: "James 3:17" }, '11-13': { text: "You spoke well of someone behind their back when others were criticising them.", verse: "James 3:17 — Full of mercy and good fruit." } }},
+  26: { to: 46, age: { '5-7': { text: "You prayed for your friends today!", verse: "James 3:18" }, '8-10': { text: "You were a peacemaker when two friends were arguing.", verse: "James 3:18" }, '11-13': { text: "You chose to resolve a conflict privately instead of calling someone out online.", verse: "James 3:18 — Peacemakers who sow in peace reap righteousness." } }},
+  33: { to: 54, age: { '5-7': { text: "You told someone 'God loves you!'", verse: "James 3:9" }, '8-10': { text: "You praised God AND were kind to people — consistent!", verse: "James 3:9" }, '11-13': { text: "You chose humility over bragging when you achieved something great.", verse: "James 3:13 — Who is wise? Let them show it by their good life." } }},
+  42: { to: 61, age: { '5-7': { text: "You forgave your friend who broke your toy.", verse: "James 3:17" }, '8-10': { text: "You wrote an encouraging note to someone having a bad day.", verse: "James 3:17" }, '11-13': { text: "You publicly credited someone else's contribution instead of taking all the glory.", verse: "James 3:17 — Heavenly wisdom is considerate, submissive, full of mercy." } }},
+  55: { to: 72, age: { '5-7': { text: "You used your words to make someone smile!", verse: "James 3:18" }, '8-10': { text: "You listened carefully to someone without interrupting.", verse: "James 3:17" }, '11-13': { text: "You kept a friend's secret safe even when pressed by others to share it.", verse: "James 3:13 — Let them show it by their good life, by deeds done in humility." } }},
+  65: { to: 77, age: { '5-7': { text: "You helped clean up without being asked!", verse: "James 3:13" }, '8-10': { text: "You put others first and served without complaining.", verse: "James 3:13" }, '11-13': { text: "You chose to build someone up rather than tear them down when you had the chance.", verse: "James 3:18 — Peacemakers who sow in peace reap a harvest of righteousness." } }}
+};
+
+// 8 SNAKES — hurtful/foolish speech pulls you down
+// On a snake: you get a question. Correct = only slide half way. Wrong = full slide.
+const SNAKES = {
+  16: { to: 4,  age: { '5-7': { text: "You called someone a mean name.", verse: "James 3:10" }, '8-10': { text: "You gossiped about a classmate behind their back.", verse: "James 3:6" }, '11-13': { text: "You screenshot someone's private message and shared it with others.", verse: "James 3:6 — The tongue is a fire, a world of evil." } }},
+  24: { to: 8,  age: { '5-7': { text: "You said 'I hate you!' when you were angry.", verse: "James 3:8" }, '8-10': { text: "You bragged to make someone else feel small.", verse: "James 3:14" }, '11-13': { text: "You stirred up drama in a group chat for entertainment.", verse: "James 3:14-16 — Where you have selfish ambition, there you find disorder." } }},
+  38: { to: 19, age: { '5-7': { text: "You told a lie to get someone in trouble.", verse: "James 3:14" }, '8-10': { text: "You pretended to be nice to their face, then mocked them to others.", verse: "James 3:10" }, '11-13': { text: "You praised God in church but cursed someone on the way home.", verse: "James 3:10 — Out of the same mouth come praise and cursing. This should not be." } }},
+  48: { to: 30, age: { '5-7': { text: "You laughed at someone who fell over.", verse: "James 3:8" }, '8-10': { text: "Your careless words hurt someone and you didn't apologise.", verse: "James 3:8" }, '11-13': { text: "You used harsh words in an argument that damaged a friendship.", verse: "James 3:5-6 — Consider what a great forest is set on fire by a small spark." } }},
+  56: { to: 41, age: { '5-7': { text: "You whispered a secret that wasn't yours to tell.", verse: "James 3:6" }, '8-10': { text: "You mocked someone for getting an answer wrong in class.", verse: "James 3:6" }, '11-13': { text: "You posted something hurtful online without thinking about the consequences.", verse: "James 3:6 — It corrupts the whole body and sets the course of one's life on fire." } }},
+  64: { to: 43, age: { '5-7': { text: "You shouted at your sibling over something small.", verse: "James 3:9" }, '8-10': { text: "You complained and grumbled instead of being thankful.", verse: "James 3:14" }, '11-13': { text: "You claimed to follow God's wisdom but acted out of jealousy.", verse: "James 3:14 — Do not boast about it or deny the truth." } }},
+  73: { to: 52, age: { '5-7': { text: "You said 'You can't play with us!' to someone.", verse: "James 3:10" }, '8-10': { text: "You left someone out of the group on purpose.", verse: "James 3:10" }, '11-13': { text: "You used sarcasm to hurt someone while pretending you were 'just joking.'", verse: "James 3:8 — No human being can tame the tongue. It is a restless evil, full of deadly poison." } }},
+  78: { to: 59, age: { '5-7': { text: "You blamed someone else for something you did.", verse: "James 3:14" }, '8-10': { text: "You spread a rumour you knew wasn't true.", verse: "James 3:6" }, '11-13': { text: "You manipulated a situation with your words to make yourself look good at someone else's expense.", verse: "James 3:16 — Where you have envy and selfish ambition, there you find disorder and every evil practice." } }}
+};
+
+// 10 QUESTION SQUARES — standalone Bible questions
+const QUESTION_SQUARES = [7, 14, 21, 28, 35, 44, 50, 58, 67, 74];
+
+// QUESTION BANK — much bigger, with passage-related questions
+const QUESTIONS = {
+  '5-7': [
+    { q: "James says the tongue is like a small _____ that starts a big fire.", opts: ["Spark","Rock","Cloud"], ans: 0 },
+    { q: "What small thing steers a big ship?", opts: ["A sail","A rudder","An anchor"], ans: 1 },
+    { q: "Can the same spring give fresh water AND salt water?", opts: ["Yes","No — James says it shouldn't!","Maybe"], ans: 1 },
+    { q: "What does James say the tongue is full of?", opts: ["Candy","Deadly poison","Water"], ans: 1 },
+    { q: "What do peacemakers plant?", opts: ["Trees","Seeds of peace","Flowers"], ans: 1 },
+    { q: "What animal does James say we put bits in the mouth of?", opts: ["Dogs","Cats","Horses"], ans: 2 },
+    { q: "Should we use our tongue to PRAISE God and CURSE people?", opts: ["Yes","No — James says this is wrong!","Only sometimes"], ans: 1 },
+    { q: "Can a fig tree make olives?", opts: ["Yes","No — just like you can't be kind AND mean!","Maybe"], ans: 1 },
+    { q: "James says if someone never says anything wrong, they can control their whole _____.", opts: ["Body","Car","House"], ans: 0 },
+    { q: "What is BIGGER — a ship or its rudder?", opts: ["The rudder","The ship!","They're the same"], ans: 1 },
+    { q: "James says wisdom from heaven is first of all _____.", opts: ["Loud","Pure","Fast"], ans: 1 },
+    { q: "Who does James say should be careful because they'll be judged more strictly?", opts: ["Children","Teachers","Animals"], ans: 1 },
+  ],
+  '8-10': [
+    { q: "In James 3, what two things does he say cannot come from the same spring?", opts: ["Hot and cold water","Fresh and salt water","Clean and dirty water"], ans: 1 },
+    { q: "James compares the tongue to a fire. What does a small spark do?", opts: ["Nothing much","Sets a whole forest ablaze","Makes pretty light"], ans: 1 },
+    { q: "What does James say about anyone who is never at fault in what they say?", opts: ["They are boring","They are perfect, able to keep their whole body in check","They don't exist"], ans: 1 },
+    { q: "James 3 wisdom from heaven is first of all _____ then peace-loving.", opts: ["Clever","Pure","Strong"], ans: 1 },
+    { q: "James 3:8 says no human being can tame the _____.", opts: ["Lion","Horse","Tongue"], ans: 2 },
+    { q: "What kind of 'wisdom' leads to disorder and evil?", opts: ["Earthly, unspiritual wisdom","Book wisdom","Creative wisdom"], ans: 0 },
+    { q: "James 3:17 lists qualities of heavenly wisdom. Which is NOT one?", opts: ["Peace-loving","Full of mercy","Full of pride"], ans: 2 },
+    { q: "What does James say peacemakers reap?", opts: ["A harvest of righteousness","Gold and silver","Popularity"], ans: 0 },
+    { q: "James says although ships are large and driven by strong winds, they're steered by a very small _____.", opts: ["Oar","Rudder","Engine"], ans: 1 },
+    { q: "James 3:12 says a salt spring CANNOT produce _____.", opts: ["Salt water","Fresh water","Any water"], ans: 1 },
+    { q: "According to James 3, where does true wisdom come from?", opts: ["School","Heaven","Experience alone"], ans: 1 },
+    { q: "James says the tongue 'corrupts the whole body.' What does 'corrupts' mean here?", opts: ["Makes it stronger","Poisons or ruins it","Feeds it"], ans: 1 },
+  ],
+  '11-13': [
+    { q: "James uses THREE metaphors for how small things control big things: bit, rudder, and _____.", opts: ["Spark that sets a forest on fire","Steering wheel","Leash"], ans: 0 },
+    { q: "James 3:6 calls the tongue 'a world of evil among the parts of the body.' What does it do?", opts: ["Corrupts the whole body and sets the course of life on fire","Makes you hungry","Controls your emotions"], ans: 0 },
+    { q: "James contrasts earthly wisdom (envy, selfish ambition) with heavenly wisdom. What does heavenly wisdom produce?", opts: ["Fame and success","Purity, peace, mercy, and good fruit","Knowledge and power"], ans: 1 },
+    { q: "Why does James say 'not many of you should become teachers'?", opts: ["Teaching is boring","Teachers will be judged more strictly","There are too many already"], ans: 1 },
+    { q: "James 3:9 highlights a specific contradiction. What is it?", opts: ["Praying then sinning","Using the same tongue to praise God and curse people made in God's likeness","Being happy then sad"], ans: 1 },
+    { q: "James 3:12 asks: 'Can a fig tree bear olives?' What's the deeper point?", opts: ["Farming advice","Your words reveal your true nature — you can't produce both good and evil","Fig trees are special"], ans: 1 },
+    { q: "'The wisdom from heaven is... impartial and sincere.' What does 'impartial' mean here?", opts: ["Not picking favourites or being hypocritical","Not caring about anything","Being indecisive"], ans: 0 },
+    { q: "James 3:18 says righteousness is 'sown in peace by those who make peace.' How does this connect to speech?", opts: ["It doesn't","Peaceful words plant seeds of righteousness in others","You should only talk about farming"], ans: 1 },
+    { q: "James says the tongue is 'set on fire by hell' (3:6). What does this extreme language suggest?", opts: ["Tongues are literally on fire","Destructive speech has a demonic, deeply evil origin","It's about spicy food"], ans: 1 },
+    { q: "James 3:7-8 says humans have tamed every kind of creature, but cannot tame the tongue. What's the implication?", opts: ["We should give up trying","We need God's help because our own strength isn't enough","Animals are smarter"], ans: 1 },
+    { q: "James 3:17 says heavenly wisdom is 'willing to yield.' What does that mean practically?", opts: ["Always agreeing with everyone","Being open to correction and other viewpoints without being stubborn","Being weak"], ans: 1 },
+    { q: "How does James 3:1 ('not many of you should become teachers') connect to the rest of the chapter about the tongue?", opts: ["Teachers talk a lot, so they have more opportunity to sin with their words","Teachers are bad","It's unrelated"], ans: 0 },
+  ]
+};
+
+// =============================================
+//  GAME STATE
+// =============================================
+let G = {};
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+let animating = false;
+let eventCB = null;
+let cellSize = 70;
+
+// Seed-based random for consistent connection curves (not random each redraw)
+let connSeeds = {};
+function seedRand(key) {
+  if (!connSeeds[key]) connSeeds[key] = Math.random();
+  return connSeeds[key];
+}
+
+function startGame() {
+  players.forEach(p => p.pos = 0);
+  G = { turn: 0, rolling: false, gameOver: false, log: [], usedQs: [] };
+  connSeeds = {};
+  document.getElementById('setup').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+  resizeBoard(); drawBoard(); updateUI();
+  logMsg('Game started! ' + players.map(p => p.name).join(', '));
+}
+function backToSetup() {
+  document.getElementById('game').classList.remove('active');
+  document.getElementById('win-overlay').classList.remove('active');
+  document.getElementById('setup').classList.add('active');
+  players.forEach(p => p.pos = 0);
+}
+
+// =============================================
+//  BOARD RENDERING
+// =============================================
+function resizeBoard() {
+  const maxW = Math.min(800, window.innerWidth - 40);
+  cellSize = Math.floor(maxW / COLS);
+  canvas.width = cellSize * COLS;
+  canvas.height = cellSize * ROWS;
+  canvas.style.width = canvas.width + 'px';
+  canvas.style.height = canvas.height + 'px';
+}
+window.addEventListener('resize', () => { resizeBoard(); drawBoard(); });
+
+function sqToXY(sq) {
+  if (sq <= 0) return { x: cellSize / 2, y: canvas.height + cellSize / 2 };
+  const idx = sq - 1;
+  const row = Math.floor(idx / COLS);
+  const col = idx % COLS;
+  const aRow = ROWS - 1 - row;
+  const aCol = (row % 2 === 0) ? col : (COLS - 1 - col);
+  return { x: aCol * cellSize + cellSize / 2, y: aRow * cellSize + cellSize / 2 };
+}
+
+function drawBoard() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Cells
+  for (let sq = 1; sq <= BOARD_SIZE; sq++) {
+    const idx = sq - 1;
+    const row = Math.floor(idx / COLS);
+    const col = idx % COLS;
+    const aRow = ROWS - 1 - row;
+    const aCol = (row % 2 === 0) ? col : (COLS - 1 - col);
+    const x = aCol * cellSize, y = aRow * cellSize;
+
+    // Background
+    const light = (aRow + aCol) % 2 === 0;
+    ctx.fillStyle = light ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)';
+    if (LADDERS[sq]) ctx.fillStyle = 'rgba(46,204,113,0.1)';
+    if (SNAKES[sq]) ctx.fillStyle = 'rgba(231,76,60,0.1)';
+    if (QUESTION_SQUARES.includes(sq)) ctx.fillStyle = 'rgba(241,196,15,0.1)';
+    if (sq === BOARD_SIZE) ctx.fillStyle = 'rgba(246,211,101,0.2)';
+    ctx.fillRect(x, y, cellSize, cellSize);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, cellSize, cellSize);
+
+    // Number
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = `${Math.max(9, cellSize * 0.16)}px sans-serif`;
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(sq, x + 3, y + cellSize * 0.2);
+
+    // Icons — drawn shapes (not emoji) for reliability
+    const cx = x + cellSize * 0.6, cy = y + cellSize * 0.55;
+    const iconR = cellSize * 0.14;
+    if (LADDERS[sq]) {
+      // Green up arrow
+      ctx.fillStyle = 'rgba(46,204,113,0.6)';
+      ctx.beginPath(); ctx.moveTo(cx, cy - iconR); ctx.lineTo(cx + iconR, cy + iconR * 0.5); ctx.lineTo(cx - iconR, cy + iconR * 0.5); ctx.closePath(); ctx.fill();
+      ctx.fillRect(cx - iconR * 0.25, cy + iconR * 0.3, iconR * 0.5, iconR * 0.7);
+    }
+    if (SNAKES[sq]) {
+      // Red down arrow
+      ctx.fillStyle = 'rgba(231,76,60,0.6)';
+      ctx.beginPath(); ctx.moveTo(cx, cy + iconR); ctx.lineTo(cx + iconR, cy - iconR * 0.5); ctx.lineTo(cx - iconR, cy - iconR * 0.5); ctx.closePath(); ctx.fill();
+      ctx.fillRect(cx - iconR * 0.25, cy - iconR, iconR * 0.5, iconR * 0.7);
+    }
+    if (QUESTION_SQUARES.includes(sq)) {
+      // Yellow question mark
+      ctx.fillStyle = 'rgba(241,196,15,0.7)';
+      ctx.font = `bold ${cellSize * 0.3}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('?', cx, cy);
+    }
+    if (sq === BOARD_SIZE) {
+      ctx.fillStyle = 'rgba(246,211,101,0.8)';
+      ctx.font = `bold ${cellSize * 0.28}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('WIN', x + cellSize / 2, y + cellSize / 2);
+    }
+  }
+
+  // Connections (with seeded curves so they don't jitter on redraw)
+  Object.entries(LADDERS).forEach(([f, d]) => drawConn(+f, d.to, '#2ecc71', 'L' + f));
+  Object.entries(SNAKES).forEach(([f, d]) => drawConn(+f, d.to, '#e74c3c', 'S' + f));
+
+  // Player tokens
+  const posMap = {};
+  players.forEach(p => { if (!posMap[p.pos]) posMap[p.pos] = []; posMap[p.pos].push(p); });
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  Object.entries(posMap).forEach(([pos, pls]) => {
+    const base = sqToXY(+pos);
+    pls.forEach((p, i) => {
+      const off = (i - (pls.length - 1) / 2) * cellSize * 0.22;
+      const px = base.x + off, py = base.y + cellSize * 0.12;
+      const r = cellSize * 0.16;
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.arc(px + 1, py + 2, r, 0, Math.PI * 2); ctx.fill();
+      // Token
+      ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      // Initial
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${cellSize * 0.15}px sans-serif`;
+      ctx.fillText(p.name[0].toUpperCase(), px, py);
+    });
+  });
+  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+}
+
+function drawConn(from, to, color, key) {
+  const a = sqToXY(from), b = sqToXY(to);
+  const s = seedRand(key);
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.globalAlpha = 0.35;
+  ctx.setLineDash([6, 4]);
+  const mx = (a.x + b.x) / 2 + (s - 0.5) * cellSize * 1.5;
+  const my = (a.y + b.y) / 2;
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(mx, my, b.x, b.y); ctx.stroke();
+  ctx.setLineDash([]);
+  // Arrow
+  const angle = Math.atan2(b.y - my, b.x - mx);
+  ctx.fillStyle = color; ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.moveTo(b.x, b.y);
+  ctx.lineTo(b.x - 12 * Math.cos(angle - 0.4), b.y - 12 * Math.sin(angle - 0.4));
+  ctx.lineTo(b.x - 12 * Math.cos(angle + 0.4), b.y - 12 * Math.sin(angle + 0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// =============================================
+//  DICE & TURNS
+// =============================================
+const diceFaces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+
+function rollDice() {
+  if (G.rolling || G.gameOver || animating) return;
+  G.rolling = true;
+  document.getElementById('dice-btn').disabled = true;
+  let ticks = 0;
+  const anim = setInterval(() => {
+    ticks++;
+    document.getElementById('dice-result').textContent = diceFaces[Math.floor(Math.random() * 6)];
+    if (ticks >= 14) {
+      clearInterval(anim);
+      const roll = Math.floor(Math.random() * 6) + 1;
+      document.getElementById('dice-result').textContent = diceFaces[roll - 1];
+      processRoll(roll);
+    }
+  }, 90);
+}
+
+function processRoll(roll) {
+  const p = players[G.turn];
+  const oldPos = p.pos;
+  let newPos = p.pos + roll;
+  if (newPos > BOARD_SIZE) {
+    newPos = BOARD_SIZE - (newPos - BOARD_SIZE);
+    logMsg(`${p.name} rolled ${roll} — bounces back to ${newPos}`);
+  } else {
+    logMsg(`${p.name} rolled ${roll} — moves to ${newPos}`);
+  }
+
+  animateMove(p, oldPos, newPos, () => {
+    p.pos = newPos; drawBoard();
+    if (newPos === BOARD_SIZE) { G.gameOver = true; showWin(p); return; }
+    // Check square type
+    if (LADDERS[newPos]) {
+      showLadderQ(p, newPos);
+    } else if (SNAKES[newPos]) {
+      showSnakeQ(p, newPos);
+    } else if (QUESTION_SQUARES.includes(newPos)) {
+      showStandaloneQ(p);
+    } else {
+      endTurn();
+    }
+  });
+}
+
+function animateMove(player, from, to, cb) {
+  animating = true;
+  const steps = Math.abs(to - from);
+  let current = from;
+  const dir = to > from ? 1 : -1;
+  let tick = 0;
+  const step = () => {
+    if (tick >= steps) { player.pos = to; drawBoard(); animating = false; cb(); return; }
+    tick++; current += dir; player.pos = current; drawBoard();
+    setTimeout(step, ANIM_SPEED);
+  };
+  step();
+}
+
+function endTurn() {
+  G.rolling = false;
+  G.turn = (G.turn + 1) % players.length;
+  document.getElementById('dice-btn').disabled = false;
+  document.getElementById('dice-result').textContent = '';
+  updateUI();
+}
+
+// =============================================
+//  GET A QUESTION (avoid repeats)
+// =============================================
+function getQuestion(age) {
+  const bank = QUESTIONS[age] || QUESTIONS['8-10'];
+  // Filter out recently used
+  const available = bank.filter((_, i) => !G.usedQs.includes(age + i));
+  const pool = available.length > 0 ? available : bank;
+  const idx = Math.floor(Math.random() * pool.length);
+  const q = pool[idx];
+  const origIdx = bank.indexOf(q);
+  G.usedQs.push(age + origIdx);
+  if (G.usedQs.length > bank.length * 0.7) G.usedQs = G.usedQs.slice(-3); // recycle
+  return q;
+}
+
+// =============================================
+//  LADDER + QUESTION
+// =============================================
+function showLadderQ(player, sq) {
+  const data = LADDERS[sq];
+  const info = data.age[player.age] || data.age['8-10'];
+  const q = getQuestion(player.age);
+
+  document.getElementById('event-title').innerHTML = '🪜 Ladder! Answer to Climb!';
+  document.getElementById('event-text').innerHTML = `<div style="margin-bottom:10px">${esc(info.text)}</div><div style="font-weight:bold;margin-bottom:4px;">Answer this question to climb from ${sq} to ${data.to}:</div><div style="font-size:1.05em;">${esc(q.q)}</div>`;
+  document.getElementById('event-move').className = 'event-move ladder';
+  document.getElementById('event-move').textContent = `Correct = climb to ${data.to}! Wrong = stay on ${sq}.`;
+  document.getElementById('event-verse').textContent = info.verse;
+  document.getElementById('event-ok').style.display = 'none';
+  document.getElementById('q-feedback').textContent = '';
+
+  const optsEl = document.getElementById('q-options');
+  optsEl.style.display = 'flex';
+  optsEl.innerHTML = q.opts.map((o, i) =>
+    `<button class="q-opt" onclick="answerLadderQ(${i},${q.ans},${sq},${data.to})">${esc(o)}</button>`
+  ).join('');
+
+  document.getElementById('event-overlay').classList.add('active');
+  eventCB = null;
+}
+
+function answerLadderQ(picked, correct, sq, dest) {
+  const btns = document.querySelectorAll('.q-opt');
+  btns.forEach((b, i) => { b.style.pointerEvents = 'none'; if (i === correct) b.classList.add('correct'); if (i === picked && picked !== correct) b.classList.add('wrong'); });
+  const p = players[G.turn];
+
+  if (picked === correct) {
+    document.getElementById('q-feedback').textContent = '✅ Correct! Climb the ladder!';
+    logMsg(`${p.name} answered correctly — climbs ${sq} → ${dest}!`);
+    eventCB = () => { animateMove(p, sq, dest, () => { p.pos = dest; drawBoard(); if (p.pos === BOARD_SIZE) { G.gameOver = true; showWin(p); return; } endTurn(); }); };
+  } else {
+    document.getElementById('q-feedback').textContent = '❌ Wrong! You stay put.';
+    logMsg(`${p.name} answered wrong — stays on ${sq}.`);
+    eventCB = () => { endTurn(); };
+  }
+  document.getElementById('event-ok').style.display = 'inline-block';
+  document.getElementById('event-ok').textContent = 'Continue';
+}
+
+// =============================================
+//  SNAKE + QUESTION
+// =============================================
+function showSnakeQ(player, sq) {
+  const data = SNAKES[sq];
+  const info = data.age[player.age] || data.age['8-10'];
+  const q = getQuestion(player.age);
+  const halfDest = Math.round(sq - (sq - data.to) / 2);
+
+  document.getElementById('event-title').innerHTML = '🐍 Snake! Answer to Reduce the Fall!';
+  document.getElementById('event-text').innerHTML = `<div style="margin-bottom:10px">${esc(info.text)}</div><div style="font-weight:bold;margin-bottom:4px;">Answer correctly to only slide halfway!</div><div style="font-size:1.05em;">${esc(q.q)}</div>`;
+  document.getElementById('event-move').className = 'event-move snake';
+  document.getElementById('event-move').textContent = `Correct = slide to ${halfDest}. Wrong = full slide to ${data.to}.`;
+  document.getElementById('event-verse').textContent = info.verse;
+  document.getElementById('event-ok').style.display = 'none';
+  document.getElementById('q-feedback').textContent = '';
+
+  const optsEl = document.getElementById('q-options');
+  optsEl.style.display = 'flex';
+  optsEl.innerHTML = q.opts.map((o, i) =>
+    `<button class="q-opt" onclick="answerSnakeQ(${i},${q.ans},${sq},${data.to},${halfDest})">${esc(o)}</button>`
+  ).join('');
+
+  document.getElementById('event-overlay').classList.add('active');
+  eventCB = null;
+}
+
+function answerSnakeQ(picked, correct, sq, fullDest, halfDest) {
+  const btns = document.querySelectorAll('.q-opt');
+  btns.forEach((b, i) => { b.style.pointerEvents = 'none'; if (i === correct) b.classList.add('correct'); if (i === picked && picked !== correct) b.classList.add('wrong'); });
+  const p = players[G.turn];
+
+  if (picked === correct) {
+    document.getElementById('q-feedback').textContent = `✅ Correct! You only slide to ${halfDest} instead of ${fullDest}.`;
+    logMsg(`${p.name} answered correctly — half slide ${sq} → ${halfDest}`);
+    eventCB = () => { animateMove(p, sq, halfDest, () => { p.pos = halfDest; drawBoard(); endTurn(); }); };
+  } else {
+    document.getElementById('q-feedback').textContent = `❌ Wrong! Full slide to ${fullDest}.`;
+    logMsg(`${p.name} answered wrong — full slide ${sq} → ${fullDest}`);
+    eventCB = () => { animateMove(p, sq, fullDest, () => { p.pos = fullDest; drawBoard(); endTurn(); }); };
+  }
+  document.getElementById('event-ok').style.display = 'inline-block';
+  document.getElementById('event-ok').textContent = 'Continue';
+}
+
+// =============================================
+//  STANDALONE QUESTION SQUARES
+// =============================================
+function showStandaloneQ(player) {
+  const q = getQuestion(player.age);
+  document.getElementById('event-title').innerHTML = '❓ Bible Question!';
+  document.getElementById('event-text').textContent = q.q;
+  document.getElementById('event-move').className = 'event-move question';
+  document.getElementById('event-move').textContent = 'Answer correctly for a bonus roll! Wrong = lose your turn.';
+  document.getElementById('event-verse').textContent = '';
+  document.getElementById('event-ok').style.display = 'none';
+  document.getElementById('q-feedback').textContent = '';
+
+  const optsEl = document.getElementById('q-options');
+  optsEl.style.display = 'flex';
+  optsEl.innerHTML = q.opts.map((o, i) =>
+    `<button class="q-opt" onclick="answerStandaloneQ(${i},${q.ans})">${esc(o)}</button>`
+  ).join('');
+
+  document.getElementById('event-overlay').classList.add('active');
+  eventCB = null;
+}
+
+function answerStandaloneQ(picked, correct) {
+  const btns = document.querySelectorAll('.q-opt');
+  btns.forEach((b, i) => { b.style.pointerEvents = 'none'; if (i === correct) b.classList.add('correct'); if (i === picked && picked !== correct) b.classList.add('wrong'); });
+  const p = players[G.turn];
+
+  if (picked === correct) {
+    document.getElementById('q-feedback').textContent = '✅ Correct! Roll again!';
+    logMsg(`${p.name} answered correctly — bonus roll!`);
+    eventCB = () => { G.rolling = false; document.getElementById('dice-btn').disabled = false; document.getElementById('dice-result').textContent = ''; updateUI(); };
+  } else {
+    document.getElementById('q-feedback').textContent = '❌ Wrong! Turn lost.';
+    logMsg(`${p.name} answered wrong — turn lost.`);
+    eventCB = () => { endTurn(); };
+  }
+  document.getElementById('event-ok').style.display = 'inline-block';
+  document.getElementById('event-ok').textContent = 'Continue';
+}
+
+// =============================================
+//  CLOSE EVENT / WIN
+// =============================================
+function closeEvent() {
+  document.getElementById('event-overlay').classList.remove('active');
+  document.getElementById('event-ok').textContent = 'OK';
+  document.getElementById('q-options').style.display = 'none';
+  if (eventCB) { const cb = eventCB; eventCB = null; cb(); }
+}
+
+function showWin(player) {
+  document.getElementById('winner-name').innerHTML = `<span style="color:${player.color}">${esc(player.name)}</span> wins!`;
+  document.getElementById('win-overlay').classList.add('active');
+}
+
+// =============================================
+//  UI
+// =============================================
+function updateUI() {
+  const p = players[G.turn];
+  document.getElementById('turn-ind').innerHTML = `<span style="color:${p.color}">${esc(p.name)}'s Turn</span>`;
+  document.getElementById('player-list').innerHTML = players.map((pl, i) =>
+    `<li class="${i === G.turn ? 'p-active' : ''}"><span class="p-dot" style="background:${pl.color}"></span>${esc(pl.name)}<span class="p-pos">Sq ${pl.pos}/${BOARD_SIZE}</span></li>`
+  ).join('');
+}
+function logMsg(msg) {
+  G.log.push(msg);
+  const el = document.getElementById('game-log');
+  el.innerHTML = G.log.map(m => `<div>${m}</div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+</script>
+</body>
+</html>
