@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>James 3 - Tame the Tongue Games!</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#1a1a2e;color:#fff;overflow-x:hidden;min-height:100vh;}
+  button{cursor:pointer;font-family:inherit;}
+
+  /* === SHARED === */
+  .screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+  .screen.active{display:flex;}
+  .back-btn{background:rgba(255,255,255,0.12);border:none;color:#fff;padding:10px 22px;border-radius:10px;font-size:1em;position:absolute;top:18px;left:18px;z-index:10;}
+  .back-btn:hover{background:rgba(255,255,255,0.22);}
+  .play-btn{padding:14px 40px;font-size:1.2em;border:none;border-radius:14px;color:#fff;font-weight:bold;background:linear-gradient(135deg,#f6d365,#fda085);margin-top:12px;transition:transform .15s;}
+  .play-btn:hover{transform:scale(1.06);}
+  .lb-btn{padding:10px 24px;font-size:1em;border:2px solid rgba(255,255,255,0.25);border-radius:10px;color:#fff;background:transparent;margin-top:8px;}
+  .lb-btn:hover{background:rgba(255,255,255,0.1);}
+  .final-msg{text-align:center;padding:20px;font-size:1.4em;color:#f6d365;}
+
+  /* === MENU === */
+  #menu{gap:18px;text-align:center;}
+  #menu h1{font-size:2.8em;background:linear-gradient(135deg,#f6d365,#fda085);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  #menu .verse{font-size:1.05em;color:#aaa;max-width:520px;font-style:italic;margin-bottom:8px;}
+  .menu-btn{padding:18px 40px;font-size:1.25em;border:none;border-radius:16px;color:#fff;font-weight:bold;width:340px;transition:transform .15s,box-shadow .15s;}
+  .menu-btn:hover{transform:scale(1.05);box-shadow:0 8px 25px rgba(0,0,0,0.3);}
+  .btn-g1{background:linear-gradient(135deg,#667eea,#764ba2);}
+  .btn-g2{background:linear-gradient(135deg,#f093fb,#f5576c);}
+  .btn-g3{background:linear-gradient(135deg,#4facfe,#00f2fe);}
+  .btn-g4{background:linear-gradient(135deg,#f7971e,#ffd200);}
+  .btn-g5{background:linear-gradient(135deg,#43e97b,#38f9d7);}
+
+  /* === MODAL SHARED === */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;}
+  .modal-overlay.active{display:flex;}
+  .modal{background:#16213e;border-radius:20px;padding:30px;width:420px;max-width:92vw;text-align:center;}
+  .modal h2{margin-bottom:14px;font-size:1.5em;}
+  .modal input{width:100%;padding:14px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:1.1em;margin-bottom:10px;text-align:center;}
+  .modal input::placeholder{color:rgba(255,255,255,0.35);}
+  .modal input:focus{outline:none;border-color:#f6d365;}
+  .age-options{display:flex;gap:10px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;}
+  .age-opt{padding:10px 18px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:transparent;color:#fff;font-size:1em;transition:all .15s;}
+  .age-opt:hover,.age-opt.selected{background:linear-gradient(135deg,#f6d365,#fda085);border-color:transparent;color:#1a1a2e;font-weight:bold;}
+  .modal .play-btn{width:100%;}
+
+  /* === ROSTER (setup) === */
+  .roster-list{max-height:300px;overflow-y:auto;margin:12px 0;}
+  .roster-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin:4px 0;border-radius:12px;background:rgba(255,255,255,0.06);}
+  .roster-row .roster-name{font-size:1.1em;font-weight:600;}
+  .roster-row .roster-age{font-size:0.8em;padding:3px 10px;border-radius:8px;background:rgba(255,255,255,0.1);margin-left:8px;}
+  .roster-row .roster-del{background:none;border:none;color:#e74c3c;font-size:1.2em;padding:4px 8px;border-radius:8px;}
+  .roster-row .roster-del:hover{background:rgba(231,76,60,0.2);}
+  .roster-empty{color:#666;padding:20px;font-style:italic;}
+  .setup-btn{padding:12px 28px;font-size:1.1em;border:none;border-radius:14px;color:#1a1a2e;font-weight:bold;background:linear-gradient(135deg,#f6d365,#fda085);margin-top:6px;}
+  .setup-btn:hover{transform:scale(1.04);}
+
+  /* === PLAYER PICKER MODAL === */
+  .picker-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0;max-height:350px;overflow-y:auto;}
+  .picker-card{padding:14px 22px;border-radius:14px;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.12);transition:all .15s;text-align:center;min-width:120px;}
+  .picker-card:hover{transform:scale(1.05);border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.12);}
+  .picker-card .picker-name{font-size:1.15em;font-weight:bold;}
+  .picker-card .picker-age{font-size:0.8em;color:#aaa;margin-top:2px;}
+
+  /* === LEADERBOARD MODAL === */
+  .lb-modal{background:#16213e;border-radius:20px;padding:30px;width:440px;max-width:90vw;max-height:80vh;overflow-y:auto;}
+  .lb-modal h2{text-align:center;margin-bottom:5px;font-size:1.5em;color:#f6d365;}
+  .lb-tabs{display:flex;gap:8px;justify-content:center;margin:12px 0;}
+  .lb-tab{padding:8px 16px;border-radius:10px;border:none;color:#fff;font-size:0.9em;background:rgba(255,255,255,0.1);}
+  .lb-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);}
+  .lb-table{width:100%;border-collapse:collapse;margin-top:10px;}
+  .lb-table th{text-align:left;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.15);color:#aaa;font-size:0.9em;}
+  .lb-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.07);font-size:1em;}
+  .lb-table tr:nth-child(-n+3) td:first-child{font-weight:bold;}
+  .lb-rank-1{color:#ffd700;}
+  .lb-rank-2{color:#c0c0c0;}
+  .lb-rank-3{color:#cd7f32;}
+  .lb-age-badge{font-size:0.75em;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,0.1);margin-left:6px;}
+  .lb-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#fff;font-size:1.5em;}
+
+  /* === GAME 1: WORD WHACK === */
+  #game1{position:relative;}
+  .g1-header{text-align:center;margin-bottom:6px;}
+  .g1-header h2{font-size:2em;color:#f6d365;}
+  .g1-header p{color:#aaa;font-size:0.95em;}
+  .g1-stats{display:flex;justify-content:center;gap:20px;margin:8px 0;font-size:1.2em;}
+  .g1-stats span{padding:5px 14px;background:rgba(255,255,255,0.08);border-radius:10px;}
+  #g1-grid{display:grid;gap:10px;max-width:650px;width:100%;margin:10px auto;}
+  .g1-cell{height:85px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.1em;font-weight:bold;cursor:pointer;transition:all .2s;user-select:none;text-align:center;padding:6px;}
+  .g1-cell.empty{background:rgba(255,255,255,0.04);border:2px dashed rgba(255,255,255,0.08);}
+  .g1-cell.word{background:linear-gradient(135deg,#667eea,#764ba2);animation:popIn .25s ease;color:#fff;}
+  .g1-cell.good-hit{background:#2ecc71!important;animation:goodPulse .4s;}
+  .g1-cell.bad-hit{background:#e74c3c!important;animation:shake .35s;}
+  @keyframes popIn{from{transform:scale(0);}to{transform:scale(1);}}
+  @keyframes goodPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+  /* === GAME 2: STEER THE SHIP === */
+  #game2{position:relative;}
+  .g2-wrap{text-align:center;width:100%;max-width:650px;}
+  .g2-wrap h2{font-size:2em;color:#f093fb;}
+  .g2-wrap p{color:#aaa;margin-bottom:6px;font-size:0.95em;}
+  .g2-stats{display:flex;justify-content:center;gap:20px;margin:8px 0;font-size:1.2em;}
+  .g2-stats span{padding:5px 14px;background:rgba(255,255,255,0.08);border-radius:10px;}
+  #g2-canvas{background:linear-gradient(180deg,#0a1628,#1a3a5c);border-radius:16px;display:block;margin:8px auto;width:100%;max-width:600px;touch-action:none;}
+
+  /* === GAME 3: WORD SORT === */
+  #game3{position:relative;}
+  .g3-wrap{max-width:750px;width:100%;text-align:center;}
+  .g3-wrap h2{font-size:2em;color:#4facfe;}
+  .g3-wrap>p{color:#aaa;margin-bottom:8px;font-size:0.95em;}
+  .g3-stats{display:flex;justify-content:center;gap:20px;margin:8px 0;font-size:1.2em;}
+  .g3-stats span{padding:5px 14px;background:rgba(255,255,255,0.08);border-radius:10px;}
+  .g3-board{display:flex;gap:16px;margin-top:10px;width:100%;min-height:350px;}
+  .g3-col-words{flex:1.2;display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;padding:10px;background:rgba(255,255,255,0.03);border-radius:14px;min-height:200px;}
+  .g3-bucket{flex:1;min-height:200px;border-radius:14px;padding:12px;transition:background .2s;}
+  .g3-bucket h3{margin-bottom:8px;font-size:1.1em;}
+  .bucket-kind{background:rgba(46,204,113,0.1);border:2px solid rgba(46,204,113,0.4);}
+  .bucket-kind.drag-over{background:rgba(46,204,113,0.25);border-color:#2ecc71;}
+  .bucket-hurtful{background:rgba(231,76,60,0.1);border:2px solid rgba(231,76,60,0.4);}
+  .bucket-hurtful.drag-over{background:rgba(231,76,60,0.25);border-color:#e74c3c;}
+  .g3-word{padding:10px 16px;border-radius:12px;font-size:0.95em;font-weight:600;cursor:grab;user-select:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:inline-block;transition:transform .15s,opacity .15s;line-height:1.3;}
+  .g3-word:hover{transform:scale(1.05);}
+  .g3-word.dragging{opacity:0.5;transform:scale(1.1);}
+  .g3-word.correct{background:#2ecc71!important;animation:goodPulse .4s;}
+  .g3-word.wrong{background:#e74c3c!important;animation:shake .35s;}
+  .g3-word.selected{outline:3px solid #f6d365;outline-offset:2px;}
+  .g3-sorted{display:inline-block;margin:3px;padding:6px 12px;border-radius:10px;font-size:0.85em;color:#fff;}
+  .sorted-kind{background:rgba(46,204,113,0.6);}
+  .sorted-hurtful{background:rgba(231,76,60,0.6);}
+  .g3-verse{font-style:italic;color:#aaa;margin-top:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:12px;font-size:0.95em;}
+
+  /* === GAME 4: FIRE STOPPER === */
+  #game4{position:relative;}
+  .g4-wrap{text-align:center;width:100%;max-width:700px;}
+  .g4-wrap h2{font-size:2em;color:#ffd200;}
+  .g4-wrap>p{color:#aaa;margin-bottom:8px;font-size:0.95em;}
+  .g4-stats{display:flex;justify-content:center;gap:20px;margin:8px 0;font-size:1.2em;}
+  .g4-stats span{padding:5px 14px;background:rgba(255,255,255,0.08);border-radius:10px;}
+  #g4-grid{display:grid;gap:6px;max-width:700px;width:100%;margin:10px auto;}
+  .g4-tile{height:70px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:0.9em;font-weight:600;cursor:pointer;user-select:none;text-align:center;padding:4px;transition:all .2s;position:relative;overflow:hidden;line-height:1.2;}
+  .g4-tile.safe{background:rgba(46,204,113,0.15);border:1px solid rgba(46,204,113,0.25);color:#2ecc71;}
+  .g4-tile.fire1{background:rgba(255,165,0,0.3);border:1px solid rgba(255,165,0,0.5);color:#ffa500;animation:flicker .4s infinite alternate;}
+  .g4-tile.fire2{background:rgba(255,80,0,0.45);border:1px solid rgba(255,80,0,0.6);color:#ff5500;animation:flicker .25s infinite alternate;}
+  .g4-tile.fire3{background:rgba(255,0,0,0.55);border:1px solid rgba(255,0,0,0.7);color:#ff0000;animation:flicker .15s infinite alternate;font-size:1.2em;}
+  .g4-tile.extinguished{background:rgba(100,100,255,0.2);border:1px solid rgba(100,100,255,0.3);color:#88f;animation:none;}
+  .g4-tile.burned{background:rgba(50,50,50,0.4);border:1px solid rgba(80,80,80,0.4);color:#555;animation:none;}
+  @keyframes flicker{from{opacity:0.85;}to{opacity:1;}}
+  .g4-fire-icon::before{content:'';position:absolute;inset:0;pointer-events:none;}
+
+  /* === GAME 5: FRESH OR SALT === */
+  #game5{position:relative;}
+  .g5-wrap{text-align:center;width:100%;max-width:650px;}
+  .g5-wrap h2{font-size:2em;color:#38f9d7;}
+  .g5-wrap>p{color:#aaa;margin-bottom:8px;font-size:0.95em;}
+  .g5-stats{display:flex;justify-content:center;gap:20px;margin:8px 0;font-size:1.2em;}
+  .g5-stats span{padding:5px 14px;background:rgba(255,255,255,0.08);border-radius:10px;}
+  .g5-scenario{background:rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:16px 0;min-height:80px;font-size:1.15em;line-height:1.5;}
+  .g5-scenario .g5-context{color:#aaa;font-size:0.85em;margin-bottom:8px;}
+  .g5-options{display:flex;gap:14px;justify-content:center;margin:16px 0;flex-wrap:wrap;}
+  .g5-opt{flex:1;min-width:200px;max-width:300px;padding:18px 20px;border-radius:14px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:1.05em;transition:all .2s;line-height:1.4;}
+  .g5-opt:hover{transform:scale(1.03);border-color:rgba(255,255,255,0.35);}
+  .g5-opt.correct-pick{background:rgba(46,204,113,0.3);border-color:#2ecc71;}
+  .g5-opt.wrong-pick{background:rgba(231,76,60,0.3);border-color:#e74c3c;}
+  .g5-feedback{font-size:1.2em;min-height:36px;margin:8px 0;}
+  .g5-progress{display:flex;gap:6px;justify-content:center;margin:12px 0;flex-wrap:wrap;}
+  .g5-dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.12);}
+  .g5-dot.right{background:#2ecc71;}
+  .g5-dot.wrong{background:#e74c3c;}
+  .g5-verse{font-style:italic;color:#aaa;margin-top:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:12px;font-size:0.95em;}
+
+  /* tap-to-sort buttons (mobile friendly) */
+  .g3-sort-btns{display:none;gap:12px;justify-content:center;margin-top:10px;}
+  .g3-sort-btns.visible{display:flex;}
+  .g3-sort-btn{padding:12px 28px;border:none;border-radius:12px;font-size:1.1em;font-weight:bold;color:#fff;}
+  .g3-sort-btn.kind{background:#2ecc71;}
+  .g3-sort-btn.hurtful{background:#e74c3c;}
+
+  @media(max-width:600px){
+    .g3-board{flex-direction:column;}
+    .g3-word{font-size:0.85em;padding:8px 12px;}
+    .menu-btn{width:280px;font-size:1.1em;}
+    #g1-grid{gap:6px;}
+    .g1-cell{height:70px;font-size:0.95em;}
+    .g4-tile{height:60px;font-size:0.8em;}
+    .g5-opt{min-width:140px;font-size:0.95em;padding:14px;}
+    .g5-scenario{font-size:1em;padding:16px;}
+    .lb-tabs{flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+
+<!-- =============== MENU =============== -->
+<div class="screen active" id="menu">
+  <h1>Tame the Tongue!</h1>
+  <div class="verse">"The tongue is a small part of the body, but it makes great boasts." — James 3:5</div>
+  <button class="setup-btn" onclick="openSetup()" style="margin-bottom:8px">👥 Setup Players</button>
+  <button class="menu-btn btn-g1" onclick="openPicker(1)">👅 Word Whack!</button>
+  <button class="menu-btn btn-g2" onclick="openPicker(2)">⛵ Steer the Ship</button>
+  <button class="menu-btn btn-g3" onclick="openPicker(3)">💬 Word Sort</button>
+  <button class="menu-btn btn-g4" onclick="openPicker(4)">🔥 Fire Stopper</button>
+  <button class="menu-btn btn-g5" onclick="openPicker(5)">💧 Fresh or Salt?</button>
+  <button class="lb-btn" onclick="openLeaderboard()" style="margin-top:20px">🏆 Leaderboard</button>
+</div>
+
+<!-- =============== SETUP PLAYERS MODAL =============== -->
+<div class="modal-overlay" id="setup-modal" onclick="closeSetup(event)">
+  <div class="modal" style="width:460px;">
+    <h2>👥 Setup Players</h2>
+    <p style="color:#aaa;font-size:0.9em;margin-bottom:14px;">Add all your students below, then close this and pick a game!</p>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <input type="text" id="setup-name" placeholder="Student name..." maxlength="20" autocomplete="off" style="flex:1;margin-bottom:0;">
+    </div>
+    <div class="age-options" id="setup-age-options">
+      <button class="age-opt" data-age="5-7" onclick="setupSelectAge(this)">5-7</button>
+      <button class="age-opt selected" data-age="8-10" onclick="setupSelectAge(this)">8-10</button>
+      <button class="age-opt" data-age="11-13" onclick="setupSelectAge(this)">11-13</button>
+    </div>
+    <button class="setup-btn" onclick="addPlayer()" style="width:100%;margin-bottom:14px;">+ Add Player</button>
+    <div class="roster-list" id="roster-list">
+      <div class="roster-empty">No players added yet</div>
+    </div>
+    <button class="play-btn" onclick="closeSetupForce()" style="width:100%;margin-top:10px;">Done</button>
+  </div>
+</div>
+
+<!-- =============== PLAYER PICKER MODAL =============== -->
+<div class="modal-overlay" id="picker-modal" onclick="closePicker(event)">
+  <div class="modal">
+    <h2 id="picker-title">Who's playing?</h2>
+    <div class="picker-grid" id="picker-grid"></div>
+    <p style="color:#666;font-size:0.85em;margin-top:8px;">Tap a name to start! <a href="#" onclick="event.preventDefault();closePicker(null,true);openSetup();" style="color:#f6d365;">Add players</a></p>
+  </div>
+</div>
+
+<!-- =============== LEADERBOARD MODAL =============== -->
+<div class="modal-overlay" id="lb-overlay" onclick="closeLB(event)">
+  <div class="lb-modal" style="position:relative;">
+    <button class="lb-close" onclick="closeLBForce()">&times;</button>
+    <h2>🏆 Leaderboard</h2>
+    <div class="lb-tabs" id="lb-tabs">
+      <button class="lb-tab active" onclick="showLB(1,this)">Word Whack</button>
+      <button class="lb-tab" onclick="showLB(2,this)">Steer the Ship</button>
+      <button class="lb-tab" onclick="showLB(3,this)">Word Sort</button>
+      <button class="lb-tab" onclick="showLB(4,this)">Fire Stopper</button>
+      <button class="lb-tab" onclick="showLB(5,this)">Fresh/Salt</button>
+    </div>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Player</th><th>Age</th><th>Score</th></tr></thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- =============== GAME 1: WORD WHACK =============== -->
+<div class="screen" id="game1">
+  <button class="back-btn" onclick="goMenu()">← Menu</button>
+  <div class="g1-header">
+    <h2>👅 Word Whack!</h2>
+    <p>Tap the <strong style="color:#e74c3c">hurtful</strong> words to squash them! Don't tap the <strong style="color:#2ecc71">kind</strong> words!</p>
+  </div>
+  <div class="g1-stats">
+    <span>⭐ <span id="g1-score">0</span></span>
+    <span>⏱ <span id="g1-timer">30</span>s</span>
+    <span>❌ <span id="g1-misses">0</span>/<span id="g1-max-misses">3</span></span>
+  </div>
+  <div id="g1-grid"></div>
+  <div id="g1-end" style="display:none" class="final-msg"></div>
+  <div style="text-align:center"><button class="play-btn" id="g1-start-btn" onclick="g1Start()">Start!</button></div>
+</div>
+
+<!-- =============== GAME 2: STEER THE SHIP =============== -->
+<div class="screen" id="game2">
+  <button class="back-btn" onclick="goMenu()">← Menu</button>
+  <div class="g2-wrap">
+    <h2>⛵ Steer the Ship</h2>
+    <p>James 3:4 — "Ships are steered by a tiny rudder." Move your mouse or finger to guide the ship! Collect ⭐, avoid 🪨!</p>
+    <div class="g2-stats">
+      <span>⭐ <span id="g2-score">0</span></span>
+      <span>⏱ <span id="g2-timer">0</span>s</span>
+    </div>
+    <canvas id="g2-canvas" width="600" height="400"></canvas>
+    <div id="g2-end" style="display:none" class="final-msg"></div>
+    <div><button class="play-btn" id="g2-start-btn" onclick="g2Start()">Start!</button></div>
+  </div>
+</div>
+
+<!-- =============== GAME 3: WORD SORT =============== -->
+<div class="screen" id="game3">
+  <button class="back-btn" onclick="goMenu()">← Menu</button>
+  <div class="g3-wrap">
+    <h2>💬 Word Sort</h2>
+    <p>James 3:10 — "Out of the same mouth come praise and cursing." Drag each word (or tap then tap a bucket) to sort them before time runs out!</p>
+    <div class="g3-stats">
+      <span>✅ <span id="g3-correct">0</span>/<span id="g3-total">0</span></span>
+      <span>⏱ <span id="g3-timer">60</span>s</span>
+      <span>⭐ <span id="g3-score">0</span></span>
+    </div>
+    <div class="g3-board">
+      <div class="g3-bucket bucket-kind" id="bucket-kind"
+        ondragover="g3DragOver(event)" ondragleave="g3DragLeave(event)" ondrop="g3Drop(event,'kind')"
+        onclick="g3TapBucket('kind')">
+        <h3>😊 Kind / Wise</h3>
+        <div id="bucket-kind-words"></div>
+      </div>
+      <div class="g3-col-words" id="g3-word-area"></div>
+      <div class="g3-bucket bucket-hurtful" id="bucket-hurtful"
+        ondragover="g3DragOver(event)" ondragleave="g3DragLeave(event)" ondrop="g3Drop(event,'hurtful')"
+        onclick="g3TapBucket('hurtful')">
+        <h3>😡 Hurtful / Foolish</h3>
+        <div id="bucket-hurtful-words"></div>
+      </div>
+    </div>
+    <div class="g3-sort-btns" id="g3-sort-btns">
+      <button class="g3-sort-btn kind" onclick="g3TapBucket('kind')">😊 Kind</button>
+      <button class="g3-sort-btn hurtful" onclick="g3TapBucket('hurtful')">😡 Hurtful</button>
+    </div>
+    <div id="g3-end" style="display:none" class="final-msg"></div>
+    <div class="g3-verse" id="g3-verse"></div>
+    <div><button class="play-btn" id="g3-start-btn" onclick="g3Start()">Start!</button></div>
+  </div>
+</div>
+
+<!-- =============== GAME 4: FIRE STOPPER =============== -->
+<div class="screen" id="game4">
+  <button class="back-btn" onclick="goMenu()">← Menu</button>
+  <div class="g4-wrap">
+    <h2>🔥 Fire Stopper</h2>
+    <p>James 3:5-6 — "The tongue is a fire." Hurtful words spread like wildfire! Tap the flames to put them out before they spread. Don't tap the green (safe) tiles!</p>
+    <div class="g4-stats">
+      <span>⭐ <span id="g4-score">0</span></span>
+      <span>⏱ <span id="g4-timer">45</span>s</span>
+      <span>🏠 <span id="g4-saved">0</span> saved</span>
+    </div>
+    <div id="g4-grid"></div>
+    <div id="g4-end" style="display:none" class="final-msg"></div>
+    <div style="text-align:center"><button class="play-btn" id="g4-start-btn" onclick="g4Start()">Start!</button></div>
+  </div>
+</div>
+
+<!-- =============== GAME 5: FRESH OR SALT =============== -->
+<div class="screen" id="game5">
+  <button class="back-btn" onclick="goMenu()">← Menu</button>
+  <div class="g5-wrap">
+    <h2>💧 Fresh or Salt?</h2>
+    <p>James 3:11 — "Can fresh water and salt water flow from the same spring?" Someone says one thing, then another. Pick the response that is "fresh water" — wise and consistent!</p>
+    <div class="g5-stats">
+      <span>✅ <span id="g5-correct">0</span>/<span id="g5-total">0</span></span>
+      <span>⏱ <span id="g5-timer">0</span>s</span>
+      <span>⭐ <span id="g5-score">0</span></span>
+    </div>
+    <div class="g5-progress" id="g5-progress"></div>
+    <div class="g5-scenario" id="g5-scenario"></div>
+    <div class="g5-options" id="g5-options"></div>
+    <div class="g5-feedback" id="g5-feedback"></div>
+    <div id="g5-end" style="display:none" class="final-msg"></div>
+    <div class="g5-verse" id="g5-verse"></div>
+    <div style="text-align:center"><button class="play-btn" id="g5-start-btn" onclick="g5Start()">Start!</button></div>
+  </div>
+</div>
+
+<script>
+// =============================================
+//  PLAYER ROSTER & PICKER SYSTEM
+// =============================================
+let currentPlayer = { name: '', age: '8-10' };
+let pendingGame = 0;
+const roster = []; // [{name, age}]
+let setupAge = '8-10';
+const leaderboard = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+
+// --- Setup modal (add/remove students) ---
+function openSetup() {
+  document.getElementById('setup-modal').classList.add('active');
+  document.getElementById('setup-name').value = '';
+  setTimeout(() => document.getElementById('setup-name').focus(), 100);
+  renderRoster();
+}
+function closeSetup(e) { if (e && e.target === e.currentTarget) closeSetupForce(); }
+function closeSetupForce() { document.getElementById('setup-modal').classList.remove('active'); }
+
+function setupSelectAge(btn) {
+  document.querySelectorAll('#setup-age-options .age-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  setupAge = btn.dataset.age;
+}
+
+function addPlayer() {
+  const input = document.getElementById('setup-name');
+  const name = input.value.trim();
+  if (!name) { input.style.borderColor = '#e74c3c'; return; }
+  if (roster.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+    input.style.borderColor = '#e74c3c';
+    input.value = '';
+    input.placeholder = 'Name already added!';
+    setTimeout(() => { input.placeholder = 'Student name...'; input.style.borderColor = ''; }, 1500);
+    return;
+  }
+  roster.push({ name, age: setupAge });
+  input.value = '';
+  input.style.borderColor = '';
+  input.focus();
+  renderRoster();
+}
+
+function removePlayer(idx) {
+  roster.splice(idx, 1);
+  renderRoster();
+}
+
+function renderRoster() {
+  const list = document.getElementById('roster-list');
+  if (roster.length === 0) {
+    list.innerHTML = '<div class="roster-empty">No players added yet</div>';
+    return;
+  }
+  list.innerHTML = roster.map((p, i) =>
+    `<div class="roster-row">
+      <div><span class="roster-name">${esc(p.name)}</span><span class="roster-age">${p.age}</span></div>
+      <button class="roster-del" onclick="removePlayer(${i})" title="Remove">&times;</button>
+    </div>`
+  ).join('');
+}
+
+document.getElementById('setup-name').addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
+
+// --- Player picker (before each game) ---
+const gameNames = ['Word Whack', 'Steer the Ship', 'Word Sort', 'Fire Stopper', 'Fresh or Salt?'];
+
+function openPicker(gameNum) {
+  if (roster.length === 0) {
+    openSetup();
+    return;
+  }
+  pendingGame = gameNum;
+  document.getElementById('picker-title').textContent = gameNames[gameNum - 1];
+  const grid = document.getElementById('picker-grid');
+  grid.innerHTML = roster.map((p, i) =>
+    `<button class="picker-card" onclick="pickPlayer(${i})">
+      <div class="picker-name">${esc(p.name)}</div>
+      <div class="picker-age">${p.age}</div>
+    </button>`
+  ).join('');
+  document.getElementById('picker-modal').classList.add('active');
+}
+
+function pickPlayer(idx) {
+  currentPlayer = { ...roster[idx] };
+  document.getElementById('picker-modal').classList.remove('active');
+  showScreen('game' + pendingGame);
+}
+
+function closePicker(e, force) { if (force || (e && e.target === e.currentTarget)) document.getElementById('picker-modal').classList.remove('active'); }
+
+function addScore(game, score) {
+  leaderboard[game].push({ name: currentPlayer.name, age: currentPlayer.age, score });
+  leaderboard[game].sort((a, b) => b.score - a.score);
+  if (leaderboard[game].length > 20) leaderboard[game].length = 20;
+}
+
+function openLeaderboard() {
+  document.getElementById('lb-overlay').classList.add('active');
+  showLB(1, document.querySelector('.lb-tab'));
+}
+function closeLB(e) { if (e.target === e.currentTarget) closeLBForce(); }
+function closeLBForce() { document.getElementById('lb-overlay').classList.remove('active'); }
+
+function showLB(game, tab) {
+  document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+  if (tab) tab.classList.add('active');
+  const body = document.getElementById('lb-body');
+  const data = leaderboard[game];
+  if (data.length === 0) {
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">No scores yet! Go play!</td></tr>';
+    return;
+  }
+  body.innerHTML = data.map((d, i) => {
+    const rc = i === 0 ? 'lb-rank-1' : i === 1 ? 'lb-rank-2' : i === 2 ? 'lb-rank-3' : '';
+    return `<tr><td class="${rc}">${i + 1}</td><td>${esc(d.name)}</td><td><span class="lb-age-badge">${d.age}</span></td><td>${d.score}</td></tr>`;
+  }).join('');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// =============================================
+//  NAVIGATION
+// =============================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goMenu() {
+  g1Stop(); g2Stop(); g3Stop(); g4Stop(); g5Stop();
+  showScreen('menu');
+}
+
+// =============================================
+//  DIFFICULTY CONFIG
+// =============================================
+function getDifficulty() {
+  const a = currentPlayer.age;
+  if (a === '5-7')  return { level: 1, label: 'Easy' };
+  if (a === '8-10') return { level: 2, label: 'Medium' };
+  return { level: 3, label: 'Hard' };
+}
+
+// =============================================
+//  GAME 1: WORD WHACK
+// =============================================
+const kindWords = ["Encourage","Love","Praise","Thank you","You're great","Well done","Bless","Forgive","Be kind","You matter","Great job","Sorry","Peace","Joy","Hope","You're awesome","Help","Share","Smile","Pray"];
+const hurtWords = ["Gossip","Lie","Insult","Mock","Bully","Complain","Curse","Blame","Tease","Boast","Mean","Rude","Hateful","Selfish","Cruel","Jealous","Grumble","Slander","Deceive","Scorn"];
+
+let g1Score, g1Misses, g1MaxMisses, g1Time, g1Timer, g1Spawner, g1Running;
+
+function g1BuildGrid() {
+  const d = getDifficulty();
+  const cols = d.level === 1 ? 3 : d.level === 2 ? 4 : 5;
+  const rows = d.level === 1 ? 3 : d.level === 2 ? 3 : 4;
+  const grid = document.getElementById('g1-grid');
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.innerHTML = '';
+  for (let i = 0; i < cols * rows; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'g1-cell empty';
+    grid.appendChild(cell);
+  }
+}
+
+function g1Start() {
+  const d = getDifficulty();
+  g1MaxMisses = d.level === 1 ? 5 : d.level === 2 ? 3 : 2;
+  const duration = d.level === 1 ? 35 : d.level === 2 ? 30 : 25;
+  const spawnRate = d.level === 1 ? 1300 : d.level === 2 ? 900 : 650;
+  const wordLife = d.level === 1 ? 3000 : d.level === 2 ? 2200 : 1600;
+
+  g1Score = 0; g1Misses = 0; g1Time = duration; g1Running = true;
+  document.getElementById('g1-score').textContent = '0';
+  document.getElementById('g1-misses').textContent = '0';
+  document.getElementById('g1-max-misses').textContent = g1MaxMisses;
+  document.getElementById('g1-timer').textContent = g1Time;
+  document.getElementById('g1-end').style.display = 'none';
+  document.getElementById('g1-start-btn').style.display = 'none';
+  g1BuildGrid();
+
+  g1Timer = setInterval(() => {
+    g1Time--;
+    document.getElementById('g1-timer').textContent = g1Time;
+    if (g1Time <= 0) g1End();
+  }, 1000);
+
+  g1Spawner = setInterval(() => g1Spawn(wordLife), spawnRate);
+  g1Spawn(wordLife);
+}
+
+function g1Spawn(life) {
+  if (!g1Running) return;
+  const cells = [...document.getElementById('g1-grid').children];
+  const empty = cells.filter(c => c.classList.contains('empty'));
+  if (!empty.length) return;
+  const cell = empty[Math.floor(Math.random() * empty.length)];
+  const isHurt = Math.random() < 0.5;
+  const list = isHurt ? hurtWords : kindWords;
+  const word = list[Math.floor(Math.random() * list.length)];
+
+  cell.className = 'g1-cell word';
+  cell.textContent = word;
+  cell.dataset.type = isHurt ? 'hurtful' : 'kind';
+
+  const handler = () => {
+    if (!g1Running) return;
+    cell.removeEventListener('click', handler);
+    if (cell.dataset.type === 'hurtful') {
+      g1Score += 10;
+      document.getElementById('g1-score').textContent = g1Score;
+      cell.className = 'g1-cell good-hit'; cell.textContent = '✅';
+    } else {
+      g1Misses++;
+      document.getElementById('g1-misses').textContent = g1Misses;
+      cell.className = 'g1-cell bad-hit'; cell.textContent = '💔';
+      if (g1Misses >= g1MaxMisses) g1End();
+    }
+    setTimeout(() => { cell.className = 'g1-cell empty'; cell.textContent = ''; }, 400);
+  };
+  cell.addEventListener('click', handler);
+
+  setTimeout(() => {
+    if (cell.classList.contains('word')) {
+      cell.removeEventListener('click', handler);
+      cell.className = 'g1-cell empty'; cell.textContent = '';
+    }
+  }, life);
+}
+
+function g1End() {
+  g1Running = false; clearInterval(g1Timer); clearInterval(g1Spawner);
+  addScore(1, g1Score);
+  const el = document.getElementById('g1-end');
+  el.style.display = 'block';
+  el.innerHTML = `<div>${currentPlayer.name}, you scored ⭐ ${g1Score}!</div><div style="font-size:0.7em;color:#aaa;margin-top:8px">"Those who guard their lips preserve their lives." — Proverbs 13:3</div>`;
+  document.getElementById('g1-start-btn').style.display = 'inline-block';
+  document.getElementById('g1-start-btn').textContent = 'Play Again!';
+}
+function g1Stop() { g1Running = false; clearInterval(g1Timer); clearInterval(g1Spawner); }
+
+// =============================================
+//  GAME 2: STEER THE SHIP (rebuilt)
+// =============================================
+const canvas = document.getElementById('g2-canvas');
+const ctx = canvas.getContext('2d');
+let g2 = {};
+
+function g2Reset() {
+  const d = getDifficulty();
+  const baseSpeed = d.level === 1 ? 1.5 : d.level === 2 ? 2 : 2.8;
+  const rockRate = d.level === 1 ? 0.015 : d.level === 2 ? 0.025 : 0.035;
+  const accel = d.level === 1 ? 0.0004 : d.level === 2 ? 0.0008 : 0.0012;
+  g2 = {
+    ship: { x: 80, y: 200 }, target: { y: 200 },
+    stars: [], rocks: [], obstacles: [],
+    score: 0, frames: 0, running: false, raf: null,
+    baseSpeed, rockRate, accel, time: 0, timerInt: null,
+    W: 600, H: 400
+  };
+}
+
+function g2ResizeCanvas() {
+  const wrap = canvas.parentElement;
+  const w = Math.min(600, wrap.clientWidth - 20);
+  canvas.style.width = w + 'px';
+  canvas.style.height = (w * 400 / 600) + 'px';
+}
+g2ResizeCanvas();
+window.addEventListener('resize', g2ResizeCanvas);
+
+function g2GetY(e, touch) {
+  const r = canvas.getBoundingClientRect();
+  const clientY = touch ? e.touches[0].clientY : e.clientY;
+  return ((clientY - r.top) / r.height) * g2.H;
+}
+
+canvas.addEventListener('mousemove', e => { if (g2.running) g2.target.y = g2GetY(e, false); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (g2.running) g2.target.y = g2GetY(e, true); }, { passive: false });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); if (g2.running) g2.target.y = g2GetY(e, true); }, { passive: false });
+
+function g2Start() {
+  g2Reset();
+  g2.running = true;
+  document.getElementById('g2-score').textContent = '0';
+  document.getElementById('g2-timer').textContent = '0';
+  document.getElementById('g2-end').style.display = 'none';
+  document.getElementById('g2-start-btn').style.display = 'none';
+  g2.timerInt = setInterval(() => {
+    g2.time++;
+    document.getElementById('g2-timer').textContent = g2.time;
+  }, 1000);
+  g2Loop();
+}
+
+// --- Drawing helpers (no emoji — works on every browser) ---
+function drawShip(x, y) {
+  ctx.save();
+  // Hull
+  ctx.fillStyle = '#8B4513';
+  ctx.beginPath();
+  ctx.moveTo(x - 20, y);
+  ctx.lineTo(x + 22, y);
+  ctx.lineTo(x + 16, y + 12);
+  ctx.lineTo(x - 14, y + 12);
+  ctx.closePath();
+  ctx.fill();
+  // Deck stripe
+  ctx.fillStyle = '#A0522D';
+  ctx.fillRect(x - 14, y + 2, 30, 3);
+  // Mast
+  ctx.strokeStyle = '#5C3317';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y);
+  ctx.lineTo(x + 2, y - 28);
+  ctx.stroke();
+  // Sail
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(x + 4, y - 26);
+  ctx.lineTo(x + 22, y - 8);
+  ctx.lineTo(x + 4, y - 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // Flag
+  ctx.fillStyle = '#e74c3c';
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y - 28);
+  ctx.lineTo(x + 12, y - 24);
+  ctx.lineTo(x + 2, y - 20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawStar(x, y, r) {
+  ctx.save();
+  ctx.fillStyle = '#f1c40f';
+  ctx.strokeStyle = '#f39c12';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+    const px = x + r * Math.cos(angle);
+    const py = y + r * Math.sin(angle);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawRock(x, y, r) {
+  ctx.save();
+  ctx.fillStyle = '#666';
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const pts = 7;
+  for (let i = 0; i < pts; i++) {
+    const angle = (i / pts) * Math.PI * 2;
+    const wobble = r * (0.75 + 0.25 * Math.sin(i * 2.5 + x * 0.1));
+    const px = x + wobble * Math.cos(angle);
+    const py = y + wobble * Math.sin(angle);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath();
+  ctx.arc(x - r * 0.2, y - r * 0.2, r * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function g2Loop() {
+  if (!g2.running) return;
+  const { W, H } = g2;
+  ctx.clearRect(0, 0, W, H);
+
+  // Water background with animated waves
+  for (let i = 0; i < 20; i++) {
+    const alpha = 0.02 + Math.sin(g2.frames * 0.015 + i * 0.8) * 0.015;
+    ctx.fillStyle = `rgba(100,180,255,${alpha})`;
+    ctx.fillRect(0, i * (H / 20), W, H / 20);
+  }
+  // Wave lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let w = 0; w < 4; w++) {
+    ctx.beginPath();
+    for (let x = 0; x < W; x += 4) {
+      const y = (H * 0.25) + w * 80 + Math.sin(x * 0.02 + g2.frames * 0.03 + w) * 8;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  g2.frames++;
+  const speed = g2.baseSpeed + g2.frames * g2.accel;
+
+  // Spawn
+  if (Math.random() < 0.025) g2.stars.push({ x: W + 20, y: 30 + Math.random() * (H - 60), r: 12 });
+  if (Math.random() < g2.rockRate + g2.frames * 0.00001) {
+    g2.rocks.push({ x: W + 20, y: 20 + Math.random() * (H - 40), r: 18 + Math.random() * 16 });
+  }
+
+  // Move ship
+  g2.ship.y += (g2.target.y - g2.ship.y) * 0.1;
+  g2.ship.y = Math.max(25, Math.min(H - 20, g2.ship.y));
+
+  // Stars
+  g2.stars = g2.stars.filter(s => {
+    s.x -= speed;
+    drawStar(s.x, s.y, s.r);
+    if (dist(s, g2.ship) < 30) {
+      g2.score++;
+      document.getElementById('g2-score').textContent = g2.score;
+      return false;
+    }
+    return s.x > -25;
+  });
+
+  // Rocks
+  g2.rocks = g2.rocks.filter(r => {
+    r.x -= speed;
+    drawRock(r.x, r.y, r.r);
+    if (dist(r, g2.ship) < r.r + 16) {
+      g2End();
+      return false;
+    }
+    return r.x > -40;
+  });
+
+  // Ship
+  drawShip(g2.ship.x, g2.ship.y);
+
+  // Rudder indicator line
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(g2.ship.x, g2.ship.y);
+  ctx.lineTo(g2.ship.x, g2.target.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  g2.raf = requestAnimationFrame(g2Loop);
+}
+
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+function g2End() {
+  g2.running = false;
+  cancelAnimationFrame(g2.raf);
+  clearInterval(g2.timerInt);
+  const finalScore = g2.score * 10 + g2.time * 2;
+  addScore(2, finalScore);
+  const el = document.getElementById('g2-end');
+  el.style.display = 'block';
+  el.innerHTML = `<div>${esc(currentPlayer.name)} survived ${g2.time}s and collected ${g2.score} stars!</div><div style="font-size:1.1em;margin-top:4px">⭐ Score: ${finalScore}</div><div style="font-size:0.7em;color:#aaa;margin-top:8px">"Although ships are large, they are steered by a very small rudder." — James 3:4</div>`;
+  document.getElementById('g2-start-btn').style.display = 'inline-block';
+  document.getElementById('g2-start-btn').textContent = 'Play Again!';
+}
+function g2Stop() { if (g2.running) { g2.running = false; cancelAnimationFrame(g2.raf); clearInterval(g2.timerInt); } }
+
+// =============================================
+//  GAME 3: WORD SORT (drag & drop + tap, timed)
+// =============================================
+const g3WordSets = {
+  '5-7': {
+    kind: ["Thank you","Please","I'm sorry","You're great","Good job","I'll help","I love you","Well done","You're kind","Let's share","Be brave","Nice work"],
+    hurtful: ["Shut up","Go away","You're dumb","Meanie","I hate you","Loser","You can't play","Crybaby","You're ugly","You stink","Nobody likes you","Tattletale"]
+  },
+  '8-10': {
+    kind: ["I appreciate you","How can I help?","That was brave","I forgive you","You're important","Let me listen","Great idea!","I believe in you","You inspire me","Thanks for trying","You're talented","I'm proud of you"],
+    hurtful: ["That's so stupid","You're worthless","Nobody cares","You always mess up","What a loser","Why even try?","You're annoying","Such a baby","You can't do anything","That's embarrassing","Just give up","You don't belong"]
+  },
+  '11-13': {
+    kind: [
+      "Standing up for someone being bullied",
+      "Encouraging a friend who failed a test",
+      "Complimenting someone's hard work",
+      "Listening without judging",
+      "Admitting you were wrong and apologising",
+      "Including someone who is left out",
+      "Celebrating someone else's success",
+      "Offering to help without being asked",
+      "Speaking well of someone behind their back",
+      "Forgiving someone who hurt you"
+    ],
+    hurtful: [
+      "Spreading rumours about a classmate",
+      "Laughing when someone trips in the hallway",
+      "Leaving someone out of the group on purpose",
+      "Talking behind a friend's back",
+      "Making fun of how someone looks",
+      "Bragging to make others feel small",
+      "Giving someone the silent treatment",
+      "Sharing someone's secret with others",
+      "Mocking someone for getting an answer wrong",
+      "Pretending not to hear when someone says hello"
+    ]
+  }
+};
+
+const g3Verses = [
+  '"With the tongue we praise our Lord and Father, and with it we curse human beings." — James 3:9',
+  '"Who is wise and understanding among you? Let them show it by their good life." — James 3:13',
+  '"The wisdom from heaven is first of all pure, then peace-loving." — James 3:17',
+  '"Peacemakers who sow in peace reap a harvest of righteousness." — James 3:18',
+  '"Can both fresh water and salt water flow from the same spring?" — James 3:11',
+];
+
+let g3State = { words: [], selected: null, correct: 0, total: 0, score: 0, time: 0, timer: null, running: false, dragId: null };
+
+function g3Start() {
+  const d = getDifficulty();
+  const age = currentPlayer.age;
+  const set = g3WordSets[age];
+  const numK = d.level === 1 ? 6 : d.level === 2 ? 8 : 10;
+  const numH = numK;
+  const timeLimit = d.level === 1 ? 90 : d.level === 2 ? 60 : 50;
+
+  // Pick random words
+  const kw = shuffle([...set.kind]).slice(0, numK).map(w => ({ text: w, type: 'kind', id: 'w' + Math.random().toString(36).slice(2) }));
+  const hw = shuffle([...set.hurtful]).slice(0, numH).map(w => ({ text: w, type: 'hurtful', id: 'w' + Math.random().toString(36).slice(2) }));
+  const all = shuffle([...kw, ...hw]);
+
+  g3State = { words: all, selected: null, correct: 0, total: all.length, score: 0, time: timeLimit, timer: null, running: true, dragId: null };
+  document.getElementById('g3-correct').textContent = '0';
+  document.getElementById('g3-total').textContent = g3State.total;
+  document.getElementById('g3-score').textContent = '0';
+  document.getElementById('g3-timer').textContent = g3State.time;
+  document.getElementById('bucket-kind-words').innerHTML = '';
+  document.getElementById('bucket-hurtful-words').innerHTML = '';
+  document.getElementById('g3-end').style.display = 'none';
+  document.getElementById('g3-verse').textContent = '';
+  document.getElementById('g3-start-btn').style.display = 'none';
+
+  g3Render();
+
+  g3State.timer = setInterval(() => {
+    g3State.time--;
+    document.getElementById('g3-timer').textContent = g3State.time;
+    if (g3State.time <= 0) g3End();
+  }, 1000);
+}
+
+function g3Render() {
+  const area = document.getElementById('g3-word-area');
+  area.innerHTML = '';
+  g3State.words.forEach(w => {
+    const el = document.createElement('div');
+    el.className = 'g3-word' + (g3State.selected === w.id ? ' selected' : '');
+    el.textContent = w.text;
+    el.draggable = true;
+    el.dataset.id = w.id;
+    el.addEventListener('dragstart', e => {
+      g3State.dragId = w.id;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    el.addEventListener('click', () => {
+      g3State.selected = g3State.selected === w.id ? null : w.id;
+      g3Render();
+      document.getElementById('g3-sort-btns').classList.toggle('visible', !!g3State.selected);
+    });
+    area.appendChild(el);
+  });
+}
+
+function g3DragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function g3DragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+
+function g3Drop(e, bucket) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (g3State.dragId) { g3Resolve(g3State.dragId, bucket); g3State.dragId = null; }
+}
+
+function g3TapBucket(bucket) {
+  if (g3State.selected) { g3Resolve(g3State.selected, bucket); g3State.selected = null; document.getElementById('g3-sort-btns').classList.remove('visible'); }
+}
+
+function g3Resolve(wordId, bucket) {
+  if (!g3State.running) return;
+  const idx = g3State.words.findIndex(w => w.id === wordId);
+  if (idx === -1) return;
+  const word = g3State.words[idx];
+  const correct = word.type === bucket;
+
+  // Visual feedback on the word element
+  const el = document.querySelector(`.g3-word[data-id="${wordId}"]`);
+  if (el) {
+    el.classList.add(correct ? 'correct' : 'wrong');
+  }
+
+  if (correct) {
+    g3State.correct++;
+    const timeBonus = Math.max(1, Math.ceil(g3State.time / 10));
+    g3State.score += 10 + timeBonus;
+  }
+
+  // Add to bucket
+  const bucketEl = document.getElementById(bucket === 'kind' ? 'bucket-kind-words' : 'bucket-hurtful-words');
+  const tag = document.createElement('span');
+  tag.className = `g3-sorted sorted-${word.type}`;
+  tag.textContent = word.text;
+  bucketEl.appendChild(tag);
+
+  setTimeout(() => {
+    g3State.words.splice(g3State.words.findIndex(w => w.id === wordId), 1);
+    document.getElementById('g3-correct').textContent = g3State.correct;
+    document.getElementById('g3-score').textContent = g3State.score;
+    if (g3State.words.length === 0) g3End();
+    else g3Render();
+  }, 300);
+}
+
+function g3End() {
+  g3State.running = false;
+  clearInterval(g3State.timer);
+  const bonus = g3State.words.length === 0 ? 50 : 0; // completion bonus
+  g3State.score += bonus;
+  document.getElementById('g3-score').textContent = g3State.score;
+  addScore(3, g3State.score);
+
+  const el = document.getElementById('g3-end');
+  el.style.display = 'block';
+  const pct = Math.round((g3State.correct / g3State.total) * 100);
+  el.innerHTML = `<div>${esc(currentPlayer.name)}: ${g3State.correct}/${g3State.total} correct (${pct}%)</div><div style="font-size:1.1em;margin-top:4px">⭐ Score: ${g3State.score}</div>`;
+  document.getElementById('g3-verse').textContent = g3Verses[Math.floor(Math.random() * g3Verses.length)];
+  document.getElementById('g3-start-btn').style.display = 'inline-block';
+  document.getElementById('g3-start-btn').textContent = 'Play Again!';
+  document.getElementById('g3-word-area').innerHTML = '';
+}
+function g3Stop() { g3State.running = false; clearInterval(g3State.timer); }
+
+// =============================================
+//  GAME 4: FIRE STOPPER
+// =============================================
+const g4Gossip = {
+  '5-7': ["She's weird","He smells","I don't like her","He's ugly","She's dumb","He's a baby","She's mean","He's slow","She's bossy","He cries a lot","She can't do it","He's stupid"],
+  '8-10': ["Did you hear about...","She thinks she's so cool","Nobody actually likes him","She's so fake","He's such a teacher's pet","I heard she got in trouble","Don't tell anyone but...","He's so annoying","She's always lying","He thinks he's better","She's two-faced","Why is he even here"],
+  '11-13': ["I heard they got dumped","Someone told me they cheated on the test","Don't sit with them, they're weird","They only got picked because of favouritism","Everyone talks about them behind their back","They posted something embarrassing online","I bet they're lying about that","They think they're so much better than us","Nobody actually wants them in the group","Did you see what they were wearing","They're so desperate for attention","Someone screenshot their message and shared it"]
+};
+
+let g4 = {};
+
+function g4BuildGrid() {
+  const d = getDifficulty();
+  const cols = d.level === 1 ? 4 : d.level === 2 ? 5 : 6;
+  const rows = d.level === 1 ? 3 : d.level === 2 ? 4 : 4;
+  const grid = document.getElementById('g4-grid');
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.innerHTML = '';
+  const tiles = [];
+  for (let i = 0; i < cols * rows; i++) {
+    const tile = document.createElement('div');
+    tile.className = 'g4-tile safe';
+    tile.dataset.idx = i;
+    tile.textContent = '🏠';
+    tile.addEventListener('click', () => g4TapTile(i));
+    grid.appendChild(tile);
+    tiles.push({ el: tile, state: 'safe', fireLevel: 0, word: '' });
+  }
+  return { tiles, cols, rows };
+}
+
+function g4Start() {
+  const d = getDifficulty();
+  const timeLimit = d.level === 1 ? 50 : d.level === 2 ? 45 : 38;
+  const spreadInterval = d.level === 1 ? 2500 : d.level === 2 ? 1800 : 1200;
+  const igniteInterval = d.level === 1 ? 3500 : d.level === 2 ? 2800 : 2000;
+
+  const { tiles, cols, rows } = g4BuildGrid();
+  const words = shuffle([...g4Gossip[currentPlayer.age]]);
+
+  g4 = {
+    tiles, cols, rows, words, wordIdx: 0,
+    score: 0, saved: 0, time: timeLimit, running: true,
+    timer: null, spreader: null, igniter: null
+  };
+
+  document.getElementById('g4-score').textContent = '0';
+  document.getElementById('g4-saved').textContent = '0';
+  document.getElementById('g4-timer').textContent = g4.time;
+  document.getElementById('g4-end').style.display = 'none';
+  document.getElementById('g4-start-btn').style.display = 'none';
+
+  g4.timer = setInterval(() => {
+    g4.time--;
+    document.getElementById('g4-timer').textContent = g4.time;
+    if (g4.time <= 0) g4End();
+  }, 1000);
+
+  // Ignite a new fire periodically
+  g4Ignite();
+  g4.igniter = setInterval(g4Ignite, igniteInterval);
+
+  // Spread existing fires
+  g4.spreader = setInterval(g4Spread, spreadInterval);
+}
+
+function g4Ignite() {
+  if (!g4.running) return;
+  const safe = g4.tiles.filter(t => t.state === 'safe');
+  if (safe.length === 0) { g4End(); return; }
+  const t = safe[Math.floor(Math.random() * safe.length)];
+  const word = g4.words[g4.wordIdx % g4.words.length];
+  g4.wordIdx++;
+  t.state = 'fire'; t.fireLevel = 1; t.word = word;
+  t.el.className = 'g4-tile fire1';
+  t.el.textContent = word;
+}
+
+function g4Spread() {
+  if (!g4.running) return;
+  const fires = g4.tiles.filter(t => t.state === 'fire');
+
+  // Intensify existing fires
+  fires.forEach(t => {
+    if (t.fireLevel < 3) {
+      t.fireLevel++;
+      t.el.className = `g4-tile fire${t.fireLevel}`;
+      if (t.fireLevel === 3) {
+        t.el.textContent = '🔥';
+      }
+    } else {
+      // Fire level 3 burns the tile permanently
+      t.state = 'burned';
+      t.el.className = 'g4-tile burned';
+      t.el.textContent = '💀';
+    }
+  });
+
+  // Spread to adjacent safe tiles
+  fires.forEach(t => {
+    if (t.fireLevel >= 2) {
+      const idx = g4.tiles.indexOf(t);
+      const adj = g4GetAdj(idx);
+      adj.forEach(ai => {
+        if (g4.tiles[ai].state === 'safe' && Math.random() < 0.35) {
+          const nt = g4.tiles[ai];
+          const word = g4.words[g4.wordIdx % g4.words.length];
+          g4.wordIdx++;
+          nt.state = 'fire'; nt.fireLevel = 1; nt.word = word;
+          nt.el.className = 'g4-tile fire1';
+          nt.el.textContent = word;
+        }
+      });
+    }
+  });
+
+  // Check if all burned
+  if (g4.tiles.every(t => t.state === 'burned' || t.state === 'fire')) {
+    g4End();
+  }
+}
+
+function g4GetAdj(idx) {
+  const { cols, rows } = g4;
+  const r = Math.floor(idx / cols), c = idx % cols;
+  const adj = [];
+  if (r > 0) adj.push(idx - cols);
+  if (r < rows - 1) adj.push(idx + cols);
+  if (c > 0) adj.push(idx - 1);
+  if (c < cols - 1) adj.push(idx + 1);
+  return adj;
+}
+
+function g4TapTile(idx) {
+  if (!g4.running) return;
+  const t = g4.tiles[idx];
+  if (t.state === 'fire') {
+    // Extinguish!
+    const points = t.fireLevel === 1 ? 15 : t.fireLevel === 2 ? 10 : 5;
+    g4.score += points;
+    t.state = 'safe'; t.fireLevel = 0; t.word = '';
+    t.el.className = 'g4-tile extinguished';
+    t.el.textContent = '💧';
+    document.getElementById('g4-score').textContent = g4.score;
+    setTimeout(() => {
+      if (t.state === 'safe') {
+        t.el.className = 'g4-tile safe';
+        t.el.textContent = '🏠';
+      }
+    }, 600);
+  } else if (t.state === 'safe') {
+    // Penalty for tapping safe tile
+    g4.score = Math.max(0, g4.score - 5);
+    document.getElementById('g4-score').textContent = g4.score;
+    t.el.style.outline = '2px solid #e74c3c';
+    setTimeout(() => t.el.style.outline = '', 400);
+  }
+}
+
+function g4End() {
+  g4.running = false;
+  clearInterval(g4.timer);
+  clearInterval(g4.spreader);
+  clearInterval(g4.igniter);
+  const saved = g4.tiles.filter(t => t.state === 'safe' || t.state === 'extinguished').length;
+  const total = g4.tiles.length;
+  const savedBonus = saved * 5;
+  g4.score += savedBonus;
+  document.getElementById('g4-score').textContent = g4.score;
+  document.getElementById('g4-saved').textContent = saved;
+  addScore(4, g4.score);
+
+  const el = document.getElementById('g4-end');
+  el.style.display = 'block';
+  el.innerHTML = `<div>${esc(currentPlayer.name)} saved ${saved}/${total} homes!</div><div style="font-size:1.1em;margin-top:4px">⭐ Score: ${g4.score}</div><div style="font-size:0.7em;color:#aaa;margin-top:8px">"Consider what a great forest is set on fire by a small spark." — James 3:5</div>`;
+  document.getElementById('g4-start-btn').style.display = 'inline-block';
+  document.getElementById('g4-start-btn').textContent = 'Play Again!';
+}
+
+function g4Stop() {
+  if (g4.running) {
+    g4.running = false;
+    clearInterval(g4.timer);
+    clearInterval(g4.spreader);
+    clearInterval(g4.igniter);
+  }
+}
+
+// =============================================
+//  GAME 5: FRESH OR SALT?
+// =============================================
+const g5Scenarios = {
+  '5-7': [
+    { context: "At church, your friend says: 'I love everyone!'", optA: "Then at lunch they share their snack with the new kid", optB: "Then at lunch they say: 'You can't sit here!'", fresh: "A" },
+    { context: "Your classmate tells the teacher: 'I always tell the truth!'", optA: "Later they blame someone else for something they did", optB: "Later they admit they forgot their homework", fresh: "B" },
+    { context: "A kid in your class says: 'I'm a good friend!'", optA: "Then they let everyone join their game at recess", optB: "Then they whisper secrets and leave someone out", fresh: "A" },
+    { context: "Your sibling says: 'I'll be nice today!'", optA: "Then they grab your toy and won't give it back", optB: "Then they ask you what game you want to play", fresh: "B" },
+    { context: "A friend says: 'Sharing is caring!'", optA: "Then they say 'No, those are ALL mine!' when you ask for one", optB: "Then they split their crayons with you", fresh: "B" },
+    { context: "Someone prays: 'Help me be kind, God.'", optA: "Then they call their brother a mean name", optB: "Then they help their mum without being asked", fresh: "B" },
+    { context: "A kid says: 'I never say mean things!'", optA: "Then they tell a younger kid: 'You're too little to play'", optB: "Then they encourage a younger kid: 'You can do it!'", fresh: "B" },
+    { context: "Your friend says: 'Everyone deserves a turn!'", optA: "Then they let the new kid go first on the slide", optB: "Then they push ahead and say 'I was here first!'", fresh: "A" },
+  ],
+  '8-10': [
+    { context: "In Sunday school, someone says: 'We should love our neighbours.'", optA: "After class, they make fun of the kid who answered wrong", optB: "After class, they invite the shy kid to sit with them", fresh: "B" },
+    { context: "A classmate writes on their notebook: 'Be kind always.'", optA: "Then they pass a mean note about another student", optB: "Then they write an encouraging note to someone having a bad day", fresh: "B" },
+    { context: "Your teammate says: 'We're all in this together!'", optA: "Then they blame someone when the team loses", optB: "Then they say 'We'll get them next time!' and high-five everyone", fresh: "B" },
+    { context: "Someone posts online: 'Spread positivity!'", optA: "Then they leave a kind comment on someone's post", optB: "Then they laugh at someone's photo in a group chat", fresh: "A" },
+    { context: "A friend says: 'I don't gossip.'", optA: "Then they tell you a secret someone asked them to keep", optB: "Then they change the subject when someone starts talking about others", fresh: "B" },
+    { context: "Your friend says: 'I think bullying is wrong.'", optA: "Then they stand up for someone being picked on", optB: "Then they join in when the popular kids tease someone", fresh: "A" },
+    { context: "Someone prays: 'Help me control my tongue, Lord.'", optA: "Ten minutes later they yell at their sibling over something small", optB: "When they get frustrated, they take a deep breath and speak calmly", fresh: "B" },
+    { context: "A student says: 'I respect everyone.'", optA: "Then they roll their eyes when the quiet kid tries to answer", optB: "Then they listen carefully even when they disagree", fresh: "B" },
+    { context: "In a group project, someone says: 'Every idea matters!'", optA: "Then they say 'That's the worst idea ever' to a suggestion", optB: "Then they say 'Interesting — let's build on that!'", fresh: "B" },
+    { context: "A friend tells you: 'I never judge people.'", optA: "Then they whisper to you about what someone's wearing", optB: "Then they compliment someone who looks different", fresh: "B" },
+  ],
+  '11-13': [
+    { context: "Someone posts a story at youth group about being accepting.", optA: "The next day they exclude a classmate from their lunch table for being 'different'", optB: "The next day they sit with someone who usually eats alone", fresh: "B" },
+    { context: "A student gives a speech about 'words having power.'", optA: "After school they screenshot someone's embarrassing text and share it", optB: "After school they text a friend who seemed down: 'Hey, you okay?'", fresh: "B" },
+    { context: "Your friend shares a devotional about James 3: 'Tame the tongue.'", optA: "That evening they get into an argument online and type hurtful things", optB: "When someone provokes them online, they choose not to respond", fresh: "B" },
+    { context: "In a discussion about integrity, someone says: 'I always keep my promises.'", optA: "They cancel plans last minute to hang out with someone more popular", optB: "Even though a better offer comes up, they keep their original commitment", fresh: "B" },
+    { context: "A peer says at camp: 'Real friends don't talk behind your back.'", optA: "When you leave the room, they start complaining about you to others", optB: "When others start gossiping about you, they say 'That's not cool' and change the topic", fresh: "B" },
+    { context: "Someone writes in their bio: 'Kindness is everything.'", optA: "They leave anonymous encouraging notes in people's lockers", optB: "They make sarcastic comments about classmates' appearances in group chats", fresh: "A" },
+    { context: "Your small group leader says: 'We should build each other up.'", optA: "Then in private, they compare group members and pick favourites", optB: "They make sure to personally encourage each person during the week", fresh: "B" },
+    { context: "A classmate says: 'Mental health matters — be gentle with people.'", optA: "Then they tell someone to 'just get over it' when they're struggling", optB: "When a friend opens up about anxiety, they listen without judging", fresh: "B" },
+    { context: "Someone tweets: 'Authenticity over everything.'", optA: "They act completely different around popular kids vs. their real friends", optB: "They stay true to themselves even when it's not the 'cool' thing", fresh: "B" },
+    { context: "At a school assembly about anti-bullying, a student speaks passionately.", optA: "Later that week they join in mocking someone's accent", optB: "Later that week they report bullying they witnessed to a teacher", fresh: "B" },
+    { context: "Your friend says: 'I believe in second chances.'", optA: "But when someone apologises, they keep bringing up the old mistake", optB: "When someone apologises sincerely, they say 'Thanks — let's move forward'", fresh: "B" },
+    { context: "A peer shares: 'Humility is a strength, not a weakness.'", optA: "Then they spend the afternoon bragging about their grades to make others feel small", optB: "When they do well on a test, they quietly celebrate and offer to help a friend study", fresh: "B" },
+  ]
+};
+
+const g5Verses = [
+  '"Can both fresh water and salt water flow from the same spring?" — James 3:11',
+  '"Does a fig tree bear olives, or a grapevine bear figs?" — James 3:12',
+  '"The wisdom that comes from heaven is first of all pure, then peace-loving." — James 3:17',
+  '"Who is wise and understanding among you? Let them show it by their good life." — James 3:13',
+  '"Peacemakers who sow in peace reap a harvest of righteousness." — James 3:18',
+];
+
+let g5 = {};
+
+function g5Start() {
+  const d = getDifficulty();
+  const age = currentPlayer.age;
+  const timeLimit = d.level === 1 ? 10 : d.level === 2 ? 8 : 6; // per question
+  const scenarios = shuffle([...g5Scenarios[age]]);
+  const numQ = d.level === 1 ? 6 : d.level === 2 ? 8 : 10;
+
+  g5 = {
+    scenarios: scenarios.slice(0, numQ),
+    current: 0, correct: 0, total: Math.min(numQ, scenarios.length),
+    score: 0, timePerQ: timeLimit, timeLeft: timeLimit,
+    timer: null, running: true, answered: false, results: []
+  };
+
+  document.getElementById('g5-correct').textContent = '0';
+  document.getElementById('g5-total').textContent = g5.total;
+  document.getElementById('g5-score').textContent = '0';
+  document.getElementById('g5-timer').textContent = g5.timeLeft;
+  document.getElementById('g5-feedback').textContent = '';
+  document.getElementById('g5-end').style.display = 'none';
+  document.getElementById('g5-verse').textContent = '';
+  document.getElementById('g5-start-btn').style.display = 'none';
+
+  // Build progress dots
+  const prog = document.getElementById('g5-progress');
+  prog.innerHTML = '';
+  for (let i = 0; i < g5.total; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'g5-dot';
+    prog.appendChild(dot);
+  }
+
+  g5ShowQuestion();
+}
+
+function g5ShowQuestion() {
+  if (g5.current >= g5.total) { g5End(); return; }
+
+  const q = g5.scenarios[g5.current];
+  g5.answered = false;
+  g5.timeLeft = g5.timePerQ;
+  document.getElementById('g5-timer').textContent = g5.timeLeft;
+  document.getElementById('g5-feedback').textContent = '';
+
+  document.getElementById('g5-scenario').innerHTML =
+    `<div class="g5-context">Scenario ${g5.current + 1} of ${g5.total}</div>${esc(q.context)}`;
+
+  const opts = document.getElementById('g5-options');
+  opts.innerHTML = '';
+
+  // Randomise order
+  const order = Math.random() < 0.5 ? ['A', 'B'] : ['B', 'A'];
+  order.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'g5-opt';
+    btn.textContent = letter === 'A' ? q.optA : q.optB;
+    btn.addEventListener('click', () => g5Answer(letter, btn));
+    opts.appendChild(btn);
+  });
+
+  clearInterval(g5.timer);
+  g5.timer = setInterval(() => {
+    g5.timeLeft--;
+    document.getElementById('g5-timer').textContent = Math.max(0, g5.timeLeft);
+    if (g5.timeLeft <= 0) {
+      clearInterval(g5.timer);
+      if (!g5.answered) g5Answer(null, null); // timeout
+    }
+  }, 1000);
+}
+
+function g5Answer(letter, btnEl) {
+  if (g5.answered || !g5.running) return;
+  g5.answered = true;
+  clearInterval(g5.timer);
+
+  const q = g5.scenarios[g5.current];
+  const correct = letter === q.fresh;
+  const dots = document.getElementById('g5-progress').children;
+
+  // Highlight buttons
+  const btns = document.querySelectorAll('.g5-opt');
+  btns.forEach(b => {
+    b.style.pointerEvents = 'none';
+    const isA = b.textContent === q.optA;
+    const isCorrectOpt = (isA && q.fresh === 'A') || (!isA && q.fresh === 'B');
+    if (isCorrectOpt) b.classList.add('correct-pick');
+    if (b === btnEl && !correct) b.classList.add('wrong-pick');
+  });
+
+  if (letter === null) {
+    // Timeout
+    document.getElementById('g5-feedback').textContent = "⏱ Time's up!";
+    dots[g5.current].className = 'g5-dot wrong';
+    g5.results.push(false);
+  } else if (correct) {
+    const timeBonus = Math.max(1, g5.timeLeft * 2);
+    g5.score += 10 + timeBonus;
+    g5.correct++;
+    document.getElementById('g5-correct').textContent = g5.correct;
+    document.getElementById('g5-score').textContent = g5.score;
+    document.getElementById('g5-feedback').textContent = '✅ Fresh water! That\'s consistent and wise.';
+    dots[g5.current].className = 'g5-dot right';
+    g5.results.push(true);
+  } else {
+    document.getElementById('g5-feedback').textContent = '❌ Salt water! That\'s saying one thing but doing another.';
+    dots[g5.current].className = 'g5-dot wrong';
+    g5.results.push(false);
+  }
+
+  g5.current++;
+  setTimeout(() => {
+    if (g5.running) g5ShowQuestion();
+  }, 2000);
+}
+
+function g5End() {
+  g5.running = false;
+  clearInterval(g5.timer);
+  // Completion bonus
+  if (g5.correct === g5.total) g5.score += 50;
+  document.getElementById('g5-score').textContent = g5.score;
+  addScore(5, g5.score);
+
+  document.getElementById('g5-scenario').innerHTML = '';
+  document.getElementById('g5-options').innerHTML = '';
+  const pct = Math.round((g5.correct / g5.total) * 100);
+
+  const el = document.getElementById('g5-end');
+  el.style.display = 'block';
+  el.innerHTML = `<div>${esc(currentPlayer.name)}: ${g5.correct}/${g5.total} correct (${pct}%)</div><div style="font-size:1.1em;margin-top:4px">⭐ Score: ${g5.score}</div>${g5.correct === g5.total ? '<div style="font-size:0.9em;color:#2ecc71;margin-top:4px">Perfect — pure fresh water!</div>' : ''}`;
+  document.getElementById('g5-verse').textContent = g5Verses[Math.floor(Math.random() * g5Verses.length)];
+  document.getElementById('g5-start-btn').style.display = 'inline-block';
+  document.getElementById('g5-start-btn').textContent = 'Play Again!';
+}
+
+function g5Stop() {
+  if (g5.running) { g5.running = false; clearInterval(g5.timer); }
+}
+
+// =============================================
+//  UTILITIES
+// =============================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+</script>
+</body>
+</html>
